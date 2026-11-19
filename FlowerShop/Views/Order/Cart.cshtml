@@ -1,0 +1,138 @@
+﻿@model FlowerShop.Models.CartViewModel
+@using FlowerShop.Services
+@{
+    ViewBag.Title = "Giỏ hàng hoa tươi - CHAM Flowers";
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-4"><i class="bi bi-bag-heart-fill text-danger me-2"></i>Giỏ Hàng Của Bạn</h1>
+
+    @if (!Model.Cart.CartItems.Any())
+    {
+        <div class="bg-white p-5 rounded-4 border text-center shadow-sm">
+            <i class="bi bi-cart-x text-muted display-3"></i>
+            <h4 class="fw-bold mt-3">Giỏ hàng chưa có sản phẩm nào</h4>
+            <p class="text-muted">Hãy chọn những bó hoa tươi thắm nhất dành tặng người thân yêu nhé!</p>
+            <a href="@Url.Action("Index", "Product")" class="btn btn-nt-primary px-4">Khám phá sản phẩm ngay</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="bg-white rounded-4 border shadow-sm overflow-hidden">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light small text-muted">
+                                <tr>
+                                    <th class="ps-4">Sản phẩm</th>
+                                    <th>Đơn giá</th>
+                                    <th style="width:150px">Số lượng</th>
+                                    <th>Thành tiền</th>
+                                    <th class="pe-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Cart.CartItems)
+                                {
+                                    <tr>
+                                        <td class="ps-4 py-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="@(item.Product != null && !string.IsNullOrEmpty(item.Product.MainImageUrl) ? item.Product.MainImageUrl : "/images/samflora/b10-main.jpg")"
+                                                     class="rounded-3 border" style="width:68px;height:68px;object-fit:cover" alt="@(item.Product != null ? item.Product.Name : "")" />
+                                                <div>
+                                                    <a href="@Url.Action("Details", "Product", new { id = item.ProductId })"
+                                                       class="fw-bold text-dark text-decoration-none">@(item.Product != null ? item.Product.Name : "Sản phẩm hoa")</a>
+                                                    <div class="text-muted small">Kho còn: @(item.Product != null ? item.Product.StockQuantity : 0)</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="fw-semibold">@AppHelpers.FormatVnd(item.UnitPrice)</td>
+                                        <td>
+                                            <form action="@Url.Action("UpdateCartItem", "Order")" method="post" class="d-flex align-items-center gap-1">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="cartItemId" value="@item.Id" />
+                                                <input type="number" name="quantity" value="@item.Quantity" min="1" max="@(item.Product != null ? item.Product.StockQuantity : 99)"
+                                                       class="form-control form-control-sm text-center" style="width:68px" />
+                                                <button type="submit" class="btn btn-sm btn-light border" title="Cập nhật"><i class="bi bi-arrow-repeat"></i></button>
+                                            </form>
+                                        </td>
+                                        <td class="fw-bold text-danger">@AppHelpers.FormatVnd(item.UnitPrice * item.Quantity)</td>
+                                        <td class="pe-3 text-end">
+                                            <form action="@Url.Action("RemoveCartItem", "Order")" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="cartItemId" value="@item.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="bg-white p-4 rounded-4 border shadow-sm">
+                    <h5 class="fw-bold mb-3">Tóm Tắt Đơn Hàng</h5>
+
+                    <!-- Áp dụng mã giảm giá -->
+                    <form action="@Url.Action("ApplyCoupon", "Order")" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <label class="form-label small fw-semibold">Mã giảm giá ưu đãi</label>
+                        <div class="input-group">
+                            <input type="text" name="couponCode" value="@Model.AppliedCoupon" class="form-control form-control-sm text-uppercase" placeholder="VD: CHAMFLOWERS15" />
+                            <button type="submit" class="btn btn-sm btn-dark">Áp dụng</button>
+                        </div>
+                    </form>
+
+                    @if (Model.AvailableCoupons.Any())
+                    {
+                        <div class="mb-3 d-flex flex-wrap gap-1">
+                            @foreach (var c in Model.AvailableCoupons)
+                            {
+                                <form action="@Url.Action("ApplyCoupon", "Order")" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="couponCode" value="@c.Code" />
+                                    <button type="submit" class="badge bg-danger-subtle text-danger border-0 py-1 px-2" title="@c.Description">
+                                        + Dùng @c.Code (-@c.DiscountPercent%)
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    }
+
+                    <hr />
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-muted">Tạm tính:</span>
+                        <span class="fw-semibold">@AppHelpers.FormatVnd(Model.SubTotal)</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-muted">Phí giao hoa dự kiến:</span>
+                        <span class="fw-semibold">@AppHelpers.FormatVnd(Model.ShippingFee)</span>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="d-flex justify-content-between small mb-2 text-success">
+                            <span>Giảm giá (@Model.AppliedCoupon):</span>
+                            <span class="fw-bold">-@AppHelpers.FormatVnd(Model.DiscountAmount)</span>
+                        </div>
+                    }
+                    <hr />
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold">Tổng thanh toán:</span>
+                        <span class="h4 fw-bold text-danger mb-0">@AppHelpers.FormatVnd(Model.GrandTotal)</span>
+                    </div>
+
+                    <a href="@Url.Action("Checkout", "Payment")" class="btn btn-nt-primary w-100 py-2">
+                        Tiến hành Đặt hàng & Thanh toán <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a href="@Url.Action("Index", "Product")" class="btn btn-light border w-100 rounded-pill mt-2 btn-sm">
+                        Tiếp tục chọn thêm hoa
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,497 @@
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"] != null ? ViewContext.RouteData.Values["controller"].ToString() : "";
+    var act = ViewContext.RouteData.Values["action"] != null ? ViewContext.RouteData.Values["action"].ToString() : "";
+
+    int pendingOrdersCount = 0;
+    int pendingReviewsCount = 0;
+    int unreadChatsCount = 0;
+    int lowStockCount = 0;
+
+    using (var dbNav = new FlowerShop.Models.FlowerShopDbContext())
+    {
+        pendingOrdersCount = dbNav.Orders.AsNoTracking().Count(o => o.Status == "Chờ xác nhận");
+        pendingReviewsCount = dbNav.Reviews.AsNoTracking().Count(r => !r.IsApproved && r.Status == FlowerShop.Models.ReviewStatus.Pending);
+        unreadChatsCount = dbNav.ChatConversations.AsNoTracking().Sum(c => (int?)c.UnreadAdminCount) ?? 0;
+        lowStockCount = dbNav.Products.AsNoTracking().Count(p => p.IsActive && p.StockQuantity <= 5);
+    }
+
+    int totalAlerts = pendingOrdersCount + pendingReviewsCount + unreadChatsCount + lowStockCount;
+
+    var adminName = User != null && User.Identity != null && !string.IsNullOrWhiteSpace(User.Identity.Name)
+        ? User.Identity.Name
+        : "Nguyễn Quang Hưởng";
+    var initials = AppHelpers.GetInitials(adminName);
+    var adminBranch = AppHelpers.GetCurrentAdminBranch();
+
+    // Kiểm tra phân quyền Admin Tổng và Admin con (RBAC)
+    bool isSuperAdmin = AppHelpers.CurrentUserIsSuperAdmin();
+    bool hasReport = AppHelpers.CurrentAdminHasPermission("REPORT");
+    bool hasProduct = AppHelpers.CurrentAdminHasPermission("PRODUCT");
+    bool hasCategory = AppHelpers.CurrentAdminHasPermission("CATEGORY");
+    bool hasOrder = AppHelpers.CurrentAdminHasPermission("ORDER");
+    bool hasHotDeal = AppHelpers.CurrentAdminHasPermission("HOTDEAL");
+    bool hasCustomer = AppHelpers.CurrentAdminHasPermission("CUSTOMER");
+    bool hasReview = AppHelpers.CurrentAdminHasPermission("REVIEW");
+    bool hasChat = AppHelpers.CurrentAdminHasPermission("CHAT");
+    bool hasBanner = AppHelpers.CurrentAdminHasPermission("BANNER");
+
+    string activePermModule = "";
+    if (ctrl == "Product")
+    {
+        activePermModule = (act == "Categories" || act == "AddCategory" || act == "EditCategory" || act == "DeleteCategory" || act == "AddFlowerCategory" || act == "EditFlowerCategory" || act == "DeleteFlowerCategory" || act == "AddSupplier" || act == "EditSupplier" || act == "DeleteSupplier") ? "CATEGORY" : "PRODUCT";
+    }
+    else if (ctrl == "Order") { activePermModule = "ORDER"; }
+    else if (ctrl == "HotDeal") { activePermModule = "HOTDEAL"; }
+    else if (ctrl == "Customer") { activePermModule = "CUSTOMER"; }
+    else if (ctrl == "Review") { activePermModule = "REVIEW"; }
+    else if (ctrl == "Banner" || ctrl == "Campaign" || ctrl == "Menu" || ctrl == "Setting") { activePermModule = "BANNER"; }
+
+    string sectionLabel = "Hệ thống Quản trị";
+    switch (ctrl)
+    {
+        case "Report":
+            sectionLabel = "Thống kê & Báo cáo";
+            break;
+        case "Product":
+            sectionLabel = "Sản phẩm & Kho hoa";
+            break;
+        case "Order":
+            sectionLabel = "Quản lý Bán hàng";
+            break;
+        case "HotDeal":
+            sectionLabel = "Chiến dịch Khuyến mãi";
+            break;
+        case "Customer":
+            sectionLabel = "Hội viên & Khách hàng";
+            break;
+        case "Review":
+            sectionLabel = "Phản hồi & Đánh giá";
+            break;
+        case "Chat":
+            sectionLabel = "Chăm sóc Trực tuyến";
+            break;
+        case "Banner":
+            sectionLabel = "Nội dung & Marketing";
+            break;
+        case "Campaign":
+            sectionLabel = "Chiến dịch & Mùa lễ";
+            break;
+        case "Setting":
+            sectionLabel = "Tuỳ biến Header • Footer";
+            break;
+        case "Menu":
+            sectionLabel = "Quản lý Menu điều hướng";
+            break;
+        case "AdminManager":
+            sectionLabel = "Phân quyền Admin con";
+            break;
+    }
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản trị CHAM Flowers</title>
+    <link rel="icon" type="image/svg+xml" href="~/images/logo-cham-icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/Content/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/Content/site.css?v=20261105_v3" />
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar Quản trị viên -->
+        <aside class="admin-sidebar d-none d-lg-flex">
+            <div class="admin-brand-box">
+                <a href="@Url.Action("Index", "Report")" class="text-decoration-none d-flex align-items-center gap-3">
+                    <img src="~/images/logo-cham-icon.svg" class="admin-brand-emblem" alt="CHAM Flowers CMS" />
+                    <div>
+                        <div class="admin-brand-title">CHAM Flowers</div>
+                        <div class="admin-brand-badge">Executive CMS</div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="admin-nav-scroll">
+                <div class="admin-nav-section">Hệ thống & Nhân sự</div>
+                @if (isSuperAdmin)
+                {
+                    <a class="nav-link @(ctrl == "AdminManager" && act == "Index" ? "active" : "")" href="@Url.Action("Index", "AdminManager")">
+                        <span class="admin-nav-icon"><i class="bi bi-person-gear"></i></span>
+                        <span>Phân quyền Admin con</span>
+                    </a>
+                }
+                <a class="nav-link @(ctrl == "Account" && act == "StaffProfile" ? "active" : "")" href="@Url.Action("StaffProfile", "Account")">
+                    <span class="admin-nav-icon"><i class="bi bi-person-vcard-fill"></i></span>
+                    <span>Hồ sơ Nhân sự của tôi</span>
+                </a>
+
+                @if (hasReport)
+                {
+                    <div class="admin-nav-section">Tổng quan & Phân tích</div>
+                    <a class="nav-link @(ctrl == "Report" ? "active" : "")" href="@Url.Action("Index", "Report")">
+                        <span class="admin-nav-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+                        <span>Dashboard & Báo cáo</span>
+                    </a>
+                }
+
+                @if (hasProduct || hasCategory)
+                {
+                    <div class="admin-nav-section">Sản phẩm & Kho hoa</div>
+                    if (hasProduct)
+                    {
+                        <a class="nav-link @(ctrl == "Product" && act != "Categories" ? "active" : "")" href="@Url.Action("AdminIndex", "Product")">
+                            <span class="admin-nav-icon"><i class="bi bi-flower1"></i></span>
+                            <span>Quản lý Sản phẩm</span>
+                            @if (lowStockCount > 0)
+                            {
+                                <span class="admin-nav-badge" title="Sản phẩm sắp hết hàng">@lowStockCount</span>
+                            }
+                        </a>
+                    }
+                    if (hasCategory)
+                    {
+                        <a class="nav-link @(ctrl == "Product" && act == "Categories" ? "active" : "")" href="@Url.Action("Categories", "Product")">
+                            <span class="admin-nav-icon"><i class="bi bi-tags-fill"></i></span>
+                            <span>Danh mục • Loại hoa • NCC</span>
+                        </a>
+                    }
+                }
+
+                @if (hasOrder || hasHotDeal)
+                {
+                    <div class="admin-nav-section">Bán hàng & Khuyến mãi</div>
+                    if (hasOrder)
+                    {
+                        <a class="nav-link @(ctrl == "Order" ? "active" : "")" href="@Url.Action("AdminIndex", "Order")">
+                            <span class="admin-nav-icon"><i class="bi bi-bag-check-fill"></i></span>
+                            <span>Quản lý Đơn hàng</span>
+                            @if (pendingOrdersCount > 0)
+                            {
+                                <span class="admin-nav-badge" title="Đơn chờ xác nhận">@pendingOrdersCount</span>
+                            }
+                        </a>
+                    }
+                    if (hasHotDeal)
+                    {
+                        <a class="nav-link @(ctrl == "HotDeal" ? "active" : "")" href="@Url.Action("Manage", "HotDeal")">
+                            <span class="admin-nav-icon"><i class="bi bi-fire"></i></span>
+                            <span>Hot Deal & Popup Builder</span>
+                        </a>
+                    }
+                }
+
+                @if (hasCustomer || hasReview || hasChat)
+                {
+                    <div class="admin-nav-section">Khách hàng & CSKH</div>
+                    if (hasCustomer)
+                    {
+                        <a class="nav-link @(ctrl == "Customer" ? "active" : "")" href="@Url.Action("Index", "Customer")">
+                            <span class="admin-nav-icon"><i class="bi bi-people-fill"></i></span>
+                            <span>Tài khoản Khách hàng</span>
+                        </a>
+                    }
+                    if (hasReview)
+                    {
+                        <a class="nav-link @(ctrl == "Review" ? "active" : "")" href="@Url.Action("Index", "Review")">
+                            <span class="admin-nav-icon"><i class="bi bi-star-half"></i></span>
+                            <span>Kiểm duyệt Đánh giá</span>
+                            @if (pendingReviewsCount > 0)
+                            {
+                                <span class="admin-nav-badge">@pendingReviewsCount</span>
+                            }
+                        </a>
+                    }
+                    if (hasChat)
+                    {
+                        <a class="nav-link @(ctrl == "Chat" ? "active" : "")" href="@Url.Action("Index", "Chat")">
+                            <span class="admin-nav-icon"><i class="bi bi-chat-heart-fill"></i></span>
+                            <span>Chat Chăm sóc KH</span>
+                            @if (unreadChatsCount > 0)
+                            {
+                                <span class="admin-nav-badge">@unreadChatsCount</span>
+                            }
+                        </a>
+                    }
+                }
+
+                @if (hasBanner)
+                {
+                    <div class="admin-nav-section">Nội dung & Quảng bá</div>
+                    <a class="nav-link @(ctrl == "Campaign" ? "active" : "")" href="@Url.Action("Index", "Campaign")">
+                        <span class="admin-nav-icon"><i class="bi bi-calendar-event-fill"></i></span>
+                        <span>Chiến dịch & Mùa lễ</span>
+                    </a>
+                    <a class="nav-link @(ctrl == "Setting" ? "active" : "")" href="@Url.Action("Index", "Setting")">
+                        <span class="admin-nav-icon"><i class="bi bi-sliders2-vertical"></i></span>
+                        <span>Tuỳ biến Header • Footer</span>
+                    </a>
+                    <a class="nav-link @(ctrl == "Menu" ? "active" : "")" href="@Url.Action("Index", "Menu")">
+                        <span class="admin-nav-icon"><i class="bi bi-menu-button-wide"></i></span>
+                        <span>Quản lý Menu điều hướng</span>
+                    </a>
+                    <a class="nav-link @(ctrl == "Banner" ? "active" : "")" href="@Url.Action("Index", "Banner")">
+                        <span class="admin-nav-icon"><i class="bi bi-images"></i></span>
+                        <span>Banner • Tin tức • Voucher</span>
+                    </a>
+                }
+            </div>
+
+            <div class="admin-sidebar-footer">
+                <a href="@Url.Action("StaffProfile", "Account")" class="text-decoration-none d-block text-white" title="Bấm để xem hồ sơ cá nhân">
+                    <div class="admin-profile-mini">
+                        <div class="admin-avatar-ring">@initials</div>
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-white text-truncate d-flex align-items-center gap-1" style="font-size:0.85rem">
+                                <span class="text-truncate">@adminName</span>
+                                <i class="bi bi-patch-check-fill text-warning flex-shrink-0" style="font-size:0.78rem" title="Quản trị viên xác thực"></i>
+                            </div>
+                            <div class="d-flex align-items-center gap-1" style="font-size:0.71rem;color:@(isSuperAdmin ? "#fde68a" : "#93c5fd");font-weight:600">
+                                <span class="admin-online-dot"></span>
+                                <span class="text-truncate">@(isSuperAdmin ? "Admin Tổng (Super Admin)" : adminBranch)</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <div class="d-flex gap-2">
+                    <a href="@Url.Action("StaffProfile", "Account")" class="btn btn-sm admin-sidebar-btn rounded-pill flex-grow-1" title="Hồ sơ nhân sự của tôi">
+                        <i class="bi bi-person-vcard me-1"></i> Hồ sơ
+                    </a>
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-sm admin-sidebar-btn rounded-pill px-2" title="Xem giao diện Cửa hàng">
+                        <i class="bi bi-shop"></i>
+                    </a>
+                    <a href="@Url.Action("Logout", "Account")" class="btn btn-sm admin-sidebar-btn admin-sidebar-btn-logout rounded-pill px-2" title="Đăng xuất">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="admin-main">
+            <header class="admin-topbar d-flex justify-content-between align-items-center gap-3">
+                <div class="min-w-0">
+                    <div class="admin-breadcrumb d-none d-sm-block">
+                        CHAM Flowers CMS <i class="bi bi-chevron-right mx-1" style="font-size:0.65rem"></i> <span class="text-danger">@sectionLabel</span>
+                    </div>
+                    <h1 class="admin-page-title text-truncate">@ViewData["Title"]</h1>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <form action="@Url.Action("AdminIndex", "Product")" method="get" class="admin-quick-search d-none d-xl-flex">
+                        <i class="bi bi-search text-muted me-2" style="font-size:0.82rem"></i>
+                        <input type="text" name="search" placeholder="Tìm nhanh mẫu hoa trong kho..." autocomplete="off" />
+                    </form>
+
+                    <div class="admin-date-chip d-none d-md-inline-flex">
+                        <i class="bi bi-calendar3 text-danger"></i>
+                        <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+                    </div>
+
+                    @if (AppHelpers.CanCreate("PRODUCT"))
+                    {
+                        <a href="@Url.Action("Create", "Product")" class="btn btn-sm btn-admin-primary d-none d-sm-inline-flex align-items-center gap-1">
+                            <i class="bi bi-plus-lg"></i> <span>Thêm hoa mới</span>
+                        </a>
+                    }
+
+                    <!-- Chuông thông báo vận hành trực tiếp -->
+                    <div class="dropdown">
+                        <button class="admin-icon-pill" type="button" data-bs-toggle="dropdown" title="Thông báo hệ thống">
+                            <i class="bi bi-bell-fill"></i>
+                            @if (totalAlerts > 0)
+                            {
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem;padding:0.25em 0.5em">
+                                    @totalAlerts
+                                </span>
+                            }
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-3" style="width:310px">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <span class="fw-bold small">Trung tâm nhắc việc</span>
+                                <span class="badge bg-danger-subtle text-danger">@totalAlerts mục</span>
+                            </div>
+                            <div class="d-grid gap-2 small">
+                                <a href="@Url.Action("AdminIndex", "Order", new { status = "Chờ xác nhận" })" class="d-flex justify-content-between align-items-center text-decoration-none text-dark p-2 rounded-3 bg-light">
+                                    <span><i class="bi bi-bag-check-fill text-warning me-2"></i>Đơn hàng chờ xác nhận</span>
+                                    <span class="badge bg-warning text-dark">@pendingOrdersCount</span>
+                                </a>
+                                <a href="@Url.Action("AdminIndex", "Product")" class="d-flex justify-content-between align-items-center text-decoration-none text-dark p-2 rounded-3 bg-light">
+                                    <span><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Mẫu hoa sắp hết kho (≤ 5)</span>
+                                    <span class="badge bg-danger">@lowStockCount</span>
+                                </a>
+                                <a href="@Url.Action("Index", "Chat")" class="d-flex justify-content-between align-items-center text-decoration-none text-dark p-2 rounded-3 bg-light">
+                                    <span><i class="bi bi-chat-heart-fill text-primary me-2"></i>Tin nhắn khách chưa đọc</span>
+                                    <span class="badge bg-primary">@unreadChatsCount</span>
+                                </a>
+                                <a href="@Url.Action("Index", "Review", new { filter = "pending" })" class="d-flex justify-content-between align-items-center text-decoration-none text-dark p-2 rounded-3 bg-light">
+                                    <span><i class="bi bi-star-half text-success me-2"></i>Đánh giá chờ duyệt</span>
+                                    <span class="badge bg-success">@pendingReviewsCount</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-light border rounded-pill d-flex align-items-center gap-2 py-1 ps-1 pe-3" type="button" data-bs-toggle="dropdown" style="height:38px">
+                            <span class="admin-avatar-ring" style="width:30px;height:30px;font-size:0.74rem">@initials</span>
+                            <span class="small fw-bold text-dark d-none d-md-inline text-truncate" style="max-width:145px">@adminName</span>
+                            <i class="bi bi-chevron-down text-muted" style="font-size:0.7rem"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 small">
+                            <li class="px-3 py-2 border-bottom mb-1">
+                                <div class="fw-bold text-dark">@adminName</div>
+                                <div class="text-muted" style="font-size:0.74rem">@(isSuperAdmin ? "Admin Tổng • Toàn quyền hệ thống" : "Admin Con • Thực thi phân quyền")</div>
+                            </li>
+                            @if (isSuperAdmin)
+                            {
+                                <li><a class="dropdown-item rounded-3 py-2" href="@Url.Action("Index", "AdminManager")"><i class="bi bi-person-gear me-2 text-danger"></i>Phân quyền Admin con</a></li>
+                            }
+                            <li><a class="dropdown-item rounded-3 py-2" href="@Url.Action("Index", "Home")"><i class="bi bi-shop me-2 text-danger"></i>Xem giao diện Cửa hàng</a></li>
+                            <li><a class="dropdown-item rounded-3 py-2" href="@Url.Action("Profile", "Account")"><i class="bi bi-person-gear me-2 text-danger"></i>Hồ sơ Quản trị viên</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li><a class="dropdown-item rounded-3 py-2 text-danger fw-semibold" href="@Url.Action("Logout", "Account")"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Mobile Quick Nav -->
+            <div class="px-3 py-2 d-flex d-lg-none gap-2 overflow-auto" style="background:#18181b">
+                @if (isSuperAdmin)
+                {
+                    <a href="@Url.Action("Index", "AdminManager")" class="btn btn-sm @(ctrl == "AdminManager" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Phân quyền</a>
+                }
+                @if (hasReport)
+                {
+                    <a href="@Url.Action("Index", "Report")" class="btn btn-sm @(ctrl == "Report" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Dashboard</a>
+                }
+                @if (hasProduct)
+                {
+                    <a href="@Url.Action("AdminIndex", "Product")" class="btn btn-sm @(ctrl == "Product" && act != "Categories" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Sản phẩm</a>
+                }
+                @if (hasCategory)
+                {
+                    <a href="@Url.Action("Categories", "Product")" class="btn btn-sm @(ctrl == "Product" && act == "Categories" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Danh mục</a>
+                }
+                @if (hasOrder)
+                {
+                    <a href="@Url.Action("AdminIndex", "Order")" class="btn btn-sm @(ctrl == "Order" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Đơn hàng</a>
+                }
+                @if (hasCustomer)
+                {
+                    <a href="@Url.Action("Index", "Customer")" class="btn btn-sm @(ctrl == "Customer" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Khách hàng</a>
+                }
+                @if (hasHotDeal)
+                {
+                    <a href="@Url.Action("Manage", "HotDeal")" class="btn btn-sm @(ctrl == "HotDeal" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Hot Deal</a>
+                }
+                @if (hasReview)
+                {
+                    <a href="@Url.Action("Index", "Review")" class="btn btn-sm @(ctrl == "Review" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Đánh giá</a>
+                }
+                @if (hasChat)
+                {
+                    <a href="@Url.Action("Index", "Chat")" class="btn btn-sm @(ctrl == "Chat" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Chat</a>
+                }
+                @if (hasBanner)
+                {
+                    <a href="@Url.Action("Index", "Campaign")" class="btn btn-sm @(ctrl == "Campaign" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Chiến dịch</a>
+                    <a href="@Url.Action("Index", "Setting")" class="btn btn-sm @(ctrl == "Setting" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Header/Footer</a>
+                    <a href="@Url.Action("Index", "Banner")" class="btn btn-sm @(ctrl == "Banner" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Banner</a>
+                    <a href="@Url.Action("Index", "Menu")" class="btn btn-sm @(ctrl == "Menu" ? "btn-danger" : "btn-outline-light") rounded-pill text-nowrap">Menu</a>
+                }
+            </div>
+
+            <div class="admin-content-area">
+                @if (!isSuperAdmin && FlowerShop.Models.AdminPermissions.SupportsCrud(activePermModule))
+                {
+                    bool canCreateHere = AppHelpers.CanCreate(activePermModule);
+                    bool canEditHere = AppHelpers.CanEdit(activePermModule);
+                    bool canDeleteHere = AppHelpers.CanDelete(activePermModule);
+
+                    <div class="p-2 px-3 mb-3 rounded-4 bg-white border shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2 small">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-dark rounded-pill px-3 py-1">
+                                <i class="bi bi-geo-alt-fill text-warning me-1"></i>@adminBranch
+                            </span>
+                            <span class="text-muted">Phân hệ <strong>@activePermModule</strong>:</span>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1">
+                                <i class="bi bi-eye-fill me-1"></i>Xem: Được phép
+                            </span>
+                            @if (canCreateHere)
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                    <i class="bi bi-plus-circle-fill me-1"></i>Thêm: Được phép
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted border rounded-pill px-2 py-1 text-decoration-line-through">
+                                    <i class="bi bi-lock-fill me-1"></i>Cấm Thêm
+                                </span>
+                            }
+
+                            @if (canEditHere)
+                            {
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1">
+                                    <i class="bi bi-pencil-fill me-1"></i>Sửa: Được phép
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted border rounded-pill px-2 py-1 text-decoration-line-through">
+                                    <i class="bi bi-lock-fill me-1"></i>Cấm Sửa
+                                </span>
+                            }
+
+                            @if (canDeleteHere)
+                            {
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">
+                                    <i class="bi bi-trash3-fill me-1"></i>Xoá: Được phép
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning-subtle text-dark border border-warning rounded-pill px-2 py-1">
+                                    <i class="bi bi-shield-lock-fill text-danger me-1"></i>Giới hạn cơ sở: Cấm Xoá
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <script src="~/Scripts/jquery-3.7.0.min.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.2.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

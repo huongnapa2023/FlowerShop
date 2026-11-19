@@ -1,0 +1,132 @@
+﻿@model List<FlowerShop.Models.Banner>
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Quản lý Nội dung Website: Banner • Tin tức • Mã giảm giá - CHAM Flowers Executive CMS";
+    var newsList = ViewBag.NewsList as List<FlowerShop.Models.NewsArticle> ?? new List<FlowerShop.Models.NewsArticle>();
+    var coupons = ViewBag.Coupons as List<FlowerShop.Models.Coupon> ?? new List<FlowerShop.Models.Coupon>();
+}
+
+<!-- 1. Quản lý Banner Quảng Cáo -->
+<div class="admin-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-images text-danger me-2"></i>Quản Lý Banner Trang Chủ</h6>
+        <form action="@Url.Action("Index", "Banner")" method="get" class="d-flex gap-1">
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Tìm tiêu đề banner..." />
+            <button type="submit" class="btn btn-sm btn-dark">Tìm</button>
+        </form>
+    </div>
+
+    <form action="@Url.Action("SaveBanner", "Banner")" method="post" enctype="multipart/form-data" class="row g-2 bg-light p-3 rounded-3 border mb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="0" />
+        <div class="col-md-4"><input type="text" name="Title" class="form-control form-control-sm" placeholder="Tiêu đề Banner mới *" required /></div>
+        <div class="col-md-4"><input type="text" name="Subtitle" class="form-control form-control-sm" placeholder="Mô tả phụ..." /></div>
+        <div class="col-md-4"><input type="text" name="LinkUrl" class="form-control form-control-sm" placeholder="Link đích (VD: /HotDeal)" /></div>
+        <div class="col-md-5"><input type="file" name="imageFile" class="form-control form-control-sm" /></div>
+        <div class="col-md-5"><input type="text" name="ImageUrl" class="form-control form-control-sm" placeholder="Hoặc URL ảnh (/images/samflora/editorial-2.jpg)" /></div>
+        <input type="hidden" name="IsActive" value="true" />
+        <div class="col-md-2 d-grid"><button type="submit" class="btn btn-sm btn-danger">+ Thêm Banner</button></div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="small text-muted">
+                <tr><th>Ảnh</th><th>Tiêu đề</th><th>Đường dẫn</th><th>Ngày tạo</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model)
+                {
+                    <tr>
+                        <td><img src="@b.ImageUrl" class="rounded-2 border" style="width:96px;height:42px;object-fit:cover" alt="" /></td>
+                        <td>
+                            <div class="fw-bold small">@b.Title</div>
+                            <div class="text-muted" style="font-size:0.74rem">@b.Subtitle</div>
+                        </td>
+                        <td class="small"><code>@b.LinkUrl</code></td>
+                        <td class="small">@b.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">
+                            <form action="@Url.Action("DeleteBanner", "Banner")" method="post" class="d-inline" onsubmit="return confirm('Xóa banner này?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 2. Quản lý Mã giảm giá / Tri ân -->
+    <div class="col-lg-6">
+        <div class="admin-card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-ticket-perforated-fill text-danger me-2"></i>Mã Giảm Giá Khuyến Mãi</h6>
+            <form action="@Url.Action("SaveCoupon", "Banner")" method="post" class="row g-2 bg-light p-3 rounded-3 border mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="0" />
+                <input type="hidden" name="IsActive" value="true" />
+                <div class="col-4"><input type="text" name="Code" class="form-control form-control-sm text-uppercase" placeholder="MÃ (VD: SINHNHAT)" required /></div>
+                <div class="col-4"><input type="number" name="DiscountPercent" value="15" class="form-control form-control-sm" placeholder="% giảm" /></div>
+                <div class="col-4"><input type="number" name="MinOrderAmount" value="300000" class="form-control form-control-sm" placeholder="Đơn tối thiểu" /></div>
+                <div class="col-8"><input type="text" name="Description" class="form-control form-control-sm" placeholder="Mô tả ưu đãi..." required /></div>
+                <div class="col-4 d-grid"><button type="submit" class="btn btn-sm btn-danger">+ Tạo mã</button></div>
+            </form>
+
+            <table class="table table-sm align-middle mb-0">
+                <thead class="small text-muted"><tr><th>Mã</th><th>Ưu đãi</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var c in coupons)
+                    {
+                        <tr>
+                            <td><span class="badge bg-danger">@c.Code</span></td>
+                            <td class="small">@c.Description</td>
+                            <td class="text-end">
+                                <form action="@Url.Action("DeleteCoupon", "Banner")" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. Quản lý Tin tức & Cẩm nang -->
+    <div class="col-lg-6">
+        <div class="admin-card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-journal-richtext text-danger me-2"></i>Bài Viết Tin Tức & Cẩm Nang</h6>
+            <form action="@Url.Action("SaveNews", "Banner")" method="post" class="row g-2 bg-light p-3 rounded-3 border mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="0" />
+                <input type="hidden" name="IsPublished" value="true" />
+                <div class="col-8"><input type="text" name="Title" class="form-control form-control-sm" placeholder="Tiêu đề bài viết *" required /></div>
+                <div class="col-4"><input type="text" name="CategoryName" value="Cẩm nang hoa tươi" class="form-control form-control-sm" /></div>
+                <div class="col-12"><input type="text" name="Summary" class="form-control form-control-sm" placeholder="Tóm tắt ngắn..." /></div>
+                <div class="col-12"><textarea name="Content" rows="2" class="form-control form-control-sm" placeholder="Nội dung bài viết..." required></textarea></div>
+                <div class="col-12 text-end"><button type="submit" class="btn btn-sm btn-danger">Đăng bài viết</button></div>
+            </form>
+
+            <ul class="list-group list-group-flush small">
+                @foreach (var n in newsList)
+                {
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@n.Title</div>
+                            <span class="text-muted" style="font-size:0.72rem">@n.CreatedAt.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <form action="@Url.Action("DeleteNews", "Banner")" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@n.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

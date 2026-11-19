@@ -1,0 +1,24 @@
+﻿@model FlowerShop.Models.NewsArticle
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container py-4" style="max-width:860px">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("News", "Home")">Tin tức</a></li>
+            <li class="breadcrumb-item active">@Model.Title</li>
+        </ol>
+    </nav>
+
+    <div class="bg-white p-4 p-md-5 rounded-4 border shadow-sm">
+        <span class="badge bg-danger-subtle text-danger mb-2">@Model.CategoryName</span>
+        <h1 class="h2 fw-bold mb-2">@Model.Title</h1>
+        <div class="text-muted small mb-4"><i class="bi bi-calendar3 me-1"></i> Đăng ngày @Model.CreatedAt.ToString("dd/MM/yyyy") • Bởi CHAM Flowers Editorial</div>
+        <img src="@(Model.ImageUrl ?? "/images/samflora/editorial-2.jpg")" class="w-100 rounded-4 mb-4" style="max-height:380px;object-fit:cover" alt="@Model.Title" />
+        <div class="lh-lg">
+            @Html.Raw(Model.Content)
+        </div>
+    </div>
+</div>

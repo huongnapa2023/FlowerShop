@@ -1,0 +1,251 @@
+﻿@model FlowerShop.Models.ChatConversation
+@using FlowerShop.Services
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Trung tâm Chăm sóc Khách hàng Trực tuyến (SignalR) - CHAM Flowers Executive CMS";
+    var conversations = ViewBag.Conversations as List<FlowerShop.Models.ChatConversation> ?? new List<FlowerShop.Models.ChatConversation>();
+    var quickProducts = ViewBag.QuickProducts as List<FlowerShop.Models.Product> ?? new List<FlowerShop.Models.Product>();
+    var quickCoupons = ViewBag.QuickCoupons as List<FlowerShop.Models.Coupon> ?? new List<FlowerShop.Models.Coupon>();
+    string curFilter = ViewBag.StatusFilter as string;
+}
+
+<div class="row g-3">
+    <!-- Sidebar: Danh sách khách hàng đang hoạt động & Lọc trạng thái -->
+    <div class="col-lg-4">
+        <div class="admin-card p-3 h-100 d-flex flex-column" style="min-height:560px">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold mb-0"><i class="bi bi-people-fill text-danger me-1"></i>Danh Sách Hội Thoại</h6>
+                <span class="badge bg-success-subtle text-success">SignalR Live</span>
+            </div>
+
+            <div class="d-flex flex-wrap gap-1 mb-3">
+                <a href="@Url.Action("Index", "Chat")" class="badge text-decoration-none @(string.IsNullOrEmpty(curFilter) ? "bg-danger" : "bg-light text-dark border")">Tất cả</a>
+                <a href="@Url.Action("Index", "Chat", new { statusFilter = "Đang xử lý" })" class="badge text-decoration-none @(curFilter == "Đang xử lý" ? "bg-danger" : "bg-light text-dark border")">Đang xử lý</a>
+                <a href="@Url.Action("Index", "Chat", new { statusFilter = "Đã giải quyết" })" class="badge text-decoration-none @(curFilter == "Đã giải quyết" ? "bg-danger" : "bg-light text-dark border")">Đã giải quyết</a>
+                <a href="@Url.Action("Index", "Chat", new { statusFilter = "Cần chuyển tiếp" })" class="badge text-decoration-none @(curFilter == "Cần chuyển tiếp" ? "bg-danger" : "bg-light text-dark border")">Cần chuyển tiếp</a>
+            </div>
+
+            @if (!conversations.Any())
+            {
+                <div class="text-center text-muted my-auto py-5 small">
+                    <i class="bi bi-chat-square-dots display-5 d-block mb-2"></i>
+                    Chưa có hội thoại
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush overflow-auto">
+                    @foreach (var c in conversations)
+                    {
+                        bool active = Model != null && Model.Id == c.Id;
+                        var lastMsg = c.Messages != null ? c.Messages.OrderByDescending(m => m.CreatedAt).FirstOrDefault() : null;
+                        <a href="@Url.Action("Index", "Chat", new { id = c.Id, statusFilter = curFilter })"
+                           class="list-group-item list-group-item-action rounded-3 mb-1 border @(active ? "bg-danger-subtle border-danger" : "")">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="fw-bold small text-dark">
+                                    <span class="d-inline-block rounded-circle me-1 @(c.IsCustomerOnline ? "bg-success" : "bg-secondary")" style="width:8px;height:8px"></span>
+                                    @c.CustomerName
+                                </div>
+                                @if (c.UnreadAdminCount > 0)
+                                {
+                                    <span class="badge rounded-pill bg-danger">@c.UnreadAdminCount</span>
+                                }
+                            </div>
+                            <div class="text-muted text-truncate mt-1" style="font-size:0.76rem">@(lastMsg != null ? lastMsg.Content : "Bắt đầu trò chuyện")</div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span class="badge bg-white text-dark border" style="font-size:0.68rem">@c.Status</span>
+                                <span class="text-muted" style="font-size:0.68rem">@c.LastMessageAt.ToString("HH:mm dd/MM")</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Cửa sổ hội thoại tập trung + Trạng thái xử lý + Công cụ gửi nhanh -->
+    <div class="col-lg-8">
+        <div class="admin-card h-100 d-flex flex-column" style="min-height:560px">
+            @if (Model == null)
+            {
+                <div class="m-auto text-center text-muted p-5">
+                    <h5>Chưa có hội thoại nào được chọn</h5>
+                    <p class="small mb-0">Khi khách hàng nhắn tin tư vấn trên website, hội thoại sẽ hiển thị tức thì tại đây.</p>
+                </div>
+            }
+            else
+            {
+                <!-- Header hội thoại & Gán trạng thái xử lý -->
+                <div class="p-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <div class="fw-bold">
+                            @Model.CustomerName
+                            <span class="badge @(Model.IsCustomerOnline ? "bg-success" : "bg-secondary") ms-1" style="font-size:0.7rem">
+                                @(Model.IsCustomerOnline ? "Đang trực tuyến" : "Ngoại tuyến")
+                            </span>
+                        </div>
+                        <div class="text-muted small">Mã phiên: <code>@Model.SessionKey</code></div>
+                    </div>
+
+                    <form action="@Url.Action("UpdateStatus", "Chat")" method="post" class="d-flex align-items-center gap-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="conversationId" value="@Model.Id" />
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="Đang xử lý" @Html.Raw(Model.Status == "Đang xử lý" ? "selected=\"selected\"" : "")>🟡 Đang xử lý</option>
+                            <option value="Đã giải quyết" @Html.Raw(Model.Status == "Đã giải quyết" ? "selected=\"selected\"" : "")>🟢 Đã giải quyết</option>
+                            <option value="Cần chuyển tiếp" @Html.Raw(Model.Status == "Cần chuyển tiếp" ? "selected=\"selected\"" : "")>🔴 Cần chuyển tiếp</option>
+                        </select>
+                    </form>
+                </div>
+
+                <!-- Khung bong bóng chat -->
+                <div id="adminChatBox" class="p-3 flex-grow-1 overflow-auto d-flex flex-column gap-2" style="max-height:370px;background:#fff9fb">
+                    @if (Model.Messages != null)
+                    {
+                        foreach (var m in Model.Messages.OrderBy(x => x.CreatedAt))
+                        {
+                            string cls = m.SenderRole == "Admin" ? "customer" : (m.SenderRole == "System" ? "system" : "admin");
+                            <div class="chat-bubble @cls">
+                                <div class="fw-bold mb-1" style="font-size:0.72rem">@m.SenderName</div>
+                                <div>@m.Content</div>
+                                @if (m.MessageType == "ProductLink" && !string.IsNullOrEmpty(m.AttachmentUrl))
+                                {
+                                    <div class="mt-1"><a href="@m.AttachmentUrl" target="_blank" class="badge bg-white text-danger text-decoration-none">Link mẫu hoa: @m.AttachmentUrl</a></div>
+                                }
+                                else if (m.MessageType == "Coupon" && !string.IsNullOrEmpty(m.AttachmentUrl))
+                                {
+                                    <div class="mt-1"><span class="badge bg-warning text-dark">Voucher: @m.AttachmentUrl</span></div>
+                                }
+                                else if (m.MessageType == "Image" && !string.IsNullOrEmpty(m.AttachmentUrl))
+                                {
+                                    <div class="mt-2"><img src="@m.AttachmentUrl" class="rounded-2" style="max-height:110px" alt="" /></div>
+                                }
+                                <div class="opacity-75 mt-1" style="font-size:0.68rem">@m.CreatedAt.ToString("HH:mm dd/MM")</div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Thanh công cụ gửi nhanh -->
+                <div class="px-3 py-2 border-top bg-light d-flex flex-wrap gap-2 align-items-center">
+                    <span class="small fw-semibold text-muted"><i class="bi bi-lightning-charge-fill text-warning"></i> Gửi nhanh:</span>
+
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-white border bg-white dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-flower1 text-danger"></i> Link sản phẩm
+                        </button>
+                        <ul class="dropdown-menu small shadow">
+                            @foreach (var qp in quickProducts)
+                            {
+                                <li>
+                                    <a class="dropdown-item" href="javascript:void(0)"
+                                       onclick="sendQuickTool('Mời bạn tham khảo mẫu @qp.Name (@AppHelpers.FormatVnd(qp.Price)) đang rất được ưa chuộng tại shop ạ!', 'ProductLink', '/Product/Details/@qp.Id')">
+                                        @qp.Name
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-white border bg-white dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-ticket-perforated text-success"></i> Mã giảm giá
+                        </button>
+                        <ul class="dropdown-menu small shadow">
+                            @foreach (var qc in quickCoupons)
+                            {
+                                <li>
+                                    <a class="dropdown-item" href="javascript:void(0)"
+                                       onclick="sendQuickTool('CHAM Flowers gửi tặng bạn mã ưu đãi @qc.Code (@qc.Description) nhé!', 'Coupon', '@qc.Code')">
+                                        @qc.Code (-@qc.DiscountPercent%)
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <button type="button" class="btn btn-sm btn-white border bg-white"
+                            onclick="sendQuickTool('Em gửi anh/chị ảnh mẫu hoa cắm thực tế tại cửa hàng CHAM Flowers ạ!', 'Image', '/images/samflora/b10-main.jpg')">
+                        <i class="bi bi-camera text-primary"></i> Gửi ảnh hoa thực tế
+                    </button>
+                </div>
+
+                <!-- Form nhập phản hồi -->
+                <form id="adminReplyForm" class="p-3 border-top d-flex gap-2">
+                    <input type="hidden" id="activeConvId" value="@Model.Id" />
+                    <input type="text" id="adminReplyInput" class="form-control" placeholder="Nhập tin nhắn tư vấn phản hồi cho @Model.CustomerName..." autocomplete="off" />
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 text-nowrap"><i class="bi bi-send-fill me-1"></i> Trả lời</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var activeConvId = parseInt(document.getElementById('activeConvId') ? document.getElementById('activeConvId').value : '0');
+        var adminBox = document.getElementById('adminChatBox');
+        var seenIds = {};
+
+        if (adminBox) adminBox.scrollTop = adminBox.scrollHeight;
+
+        function appendAdminViewMsg(m) {
+            if (!adminBox || (m.id && seenIds[m.id])) return;
+            if (m.id) seenIds[m.id] = true;
+
+            var cls = m.senderRole === 'Admin' ? 'customer' : 'admin';
+            var extra = '';
+            if (m.messageType === 'ProductLink' && m.attachmentUrl) {
+                extra = '<div class="mt-1"><a href="' + m.attachmentUrl + '" target="_blank" class="badge bg-white text-danger text-decoration-none">Link mẫu hoa: ' + m.attachmentUrl + '</a></div>';
+            } else if (m.messageType === 'Coupon' && m.attachmentUrl) {
+                extra = '<div class="mt-1"><span class="badge bg-warning text-dark">Voucher: ' + m.attachmentUrl + '</span></div>';
+            } else if (m.messageType === 'Image' && m.attachmentUrl) {
+                extra = '<div class="mt-2"><img src="' + m.attachmentUrl + '" class="rounded-2" style="max-height:110px"/></div>';
+            }
+
+            var div = document.createElement('div');
+            div.className = 'chat-bubble ' + cls;
+            div.innerHTML = '<div class="fw-bold mb-1" style="font-size:0.72rem">' + m.senderName + '</div><div>' + m.content + '</div>' + extra + '<div class="opacity-75 mt-1" style="font-size:0.68rem">' + m.createdAt + '</div>';
+            adminBox.appendChild(div);
+            adminBox.scrollTop = adminBox.scrollHeight;
+        }
+
+        function sendQuickTool(content, type, url) {
+            if (!activeConvId) return;
+            $.post('/Chat/AdminReply', {
+                conversationId: activeConvId,
+                content: content,
+                messageType: type,
+                attachmentUrl: url
+            }, function (res) {
+                if (res && res.success) appendAdminViewMsg(res.message);
+            });
+        }
+
+        var replyForm = document.getElementById('adminReplyForm');
+        if (replyForm) {
+            replyForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var inp = document.getElementById('adminReplyInput');
+                var text = inp.value ? inp.value.trim() : '';
+                if (!text || !activeConvId) return;
+                inp.value = '';
+                sendQuickTool(text, 'Text', null);
+            });
+        }
+
+        if (window.$ && $.connection && $.connection.chatHub) {
+            var hub = $.connection.chatHub;
+            hub.client.receiveMessage = function (payload) {
+                if (payload.conversationId === activeConvId) {
+                    appendAdminViewMsg(payload);
+                } else {
+                    setTimeout(function () { location.reload(); }, 800);
+                }
+            };
+            $.connection.hub.start().done(function () {
+                hub.server.joinAdminChannel();
+            });
+        }
+    </script>
+}

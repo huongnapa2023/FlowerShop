@@ -1,0 +1,95 @@
+@model PagedList.IPagedList<FlowerShop.Models.Product>
+@{
+    ViewData["Title"] = "Hot Deal - Khuyến mãi hoa tươi";
+    var categories = ViewBag.Categories as List<FlowerShop.Models.Category> ?? new List<FlowerShop.Models.Category>();
+    DateTime endDate = ViewBag.EndDate != null ? (DateTime)ViewBag.EndDate : DateTime.Now.AddDays(5);
+    int? selCat = ViewBag.CategoryId;
+    string sortOrder = ViewBag.SortOrder;
+}
+
+<div class="container py-4">
+    <!-- Banner Khuyến mãi kèm Bộ đếm thời gian Countdown -->
+    <div class="rounded-4 p-4 p-lg-5 mb-4 text-white shadow-sm" style="background: linear-gradient(125deg, #881337 0%, #e11d48 60%, #db2777 100%);">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mb-2">
+                    <i class="bi bi-fire"></i> CHƯƠNG TRÌNH HOT DEAL ĐẶC BIỆT
+                </span>
+                <h1 class="display-6 fw-bold mb-2">Săn Hoa Tươi Giá Ưu Đãi Tới 25%</h1>
+                <p class="opacity-90 mb-0">Áp dụng thêm mã <strong>CHAMFLOWERS15</strong> tại giỏ hàng để giảm thêm 15% cho đơn từ 300.000 ₫!</p>
+            </div>
+            <div class="col-lg-5 text-lg-end">
+                <div class="small text-uppercase fw-semibold mb-2 opacity-90">Kết thúc chương trình sau:</div>
+                <div class="countdown-box" data-countdown="@endDate.ToString("yyyy-MM-ddTHH:mm:ss")">
+                    <div class="countdown-unit bg-white text-danger"><strong class="cd-days">05</strong><small>Ngày</small></div>
+                    <div class="countdown-unit bg-white text-danger"><strong class="cd-hours">12</strong><small>Giờ</small></div>
+                    <div class="countdown-unit bg-white text-danger"><strong class="cd-mins">30</strong><small>Phút</small></div>
+                    <div class="countdown-unit bg-white text-danger"><strong class="cd-secs">00</strong><small>Giây</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form tìm kiếm, lọc danh mục & sắp xếp -->
+    <form action="@Url.Action("Index", "HotDeal")" method="get" class="bg-white p-3 rounded-4 border shadow-sm mb-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm tên mẫu hoa khuyến mãi..." />
+            </div>
+            <div class="col-md-3">
+                <select name="categoryId" class="form-select">
+                    <option value="">-- Tất cả danh mục --</option>
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.Id" @Html.Raw(selCat == c.Id ? "selected=\"selected\"" : "")>@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="sortOrder" class="form-select">
+                    <option value="">Mới cập nhật</option>
+                    <option value="price_asc" @Html.Raw(sortOrder == "price_asc" ? "selected=\"selected\"" : "")>Giá thấp đến cao</option>
+                    <option value="price_desc" @Html.Raw(sortOrder == "price_desc" ? "selected=\"selected\"" : "")>Giá cao đến thấp</option>
+                    <option value="name_asc" @Html.Raw(sortOrder == "name_asc" ? "selected=\"selected\"" : "")>Tên A → Z</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-nt-primary"><i class="bi bi-search me-1"></i> Lọc</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Lưới sản phẩm Hot Deal -->
+    @if (!Model.Any())
+    {
+        <div class="bg-white p-5 rounded-4 border text-center">
+            <p class="text-muted mb-0">Hiện chưa có sản phẩm khuyến mãi phù hợp điều kiện lọc.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    @Html.Partial("_ProductCard", item)
+                </div>
+            }
+        </div>
+
+        if (Model.PageCount > 1)
+        {
+            <nav class="mt-4 d-flex justify-content-center">
+                <ul class="pagination">
+                    @for (int i = 1; i <= Model.PageCount; i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "HotDeal", new { page = i, search = ViewBag.Search, categoryId = ViewBag.CategoryId, sortOrder = ViewBag.SortOrder })">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

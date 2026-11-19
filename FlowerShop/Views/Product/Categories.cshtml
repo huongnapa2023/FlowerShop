@@ -1,0 +1,131 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Quản lý Danh mục • Chủng loại hoa • Nhà cung cấp";
+    var categories = ViewBag.Categories as List<FlowerShop.Models.Category> ?? new List<FlowerShop.Models.Category>();
+    var flowerCategories = ViewBag.FlowerCategories as List<FlowerShop.Models.FlowerCategory> ?? new List<FlowerShop.Models.FlowerCategory>();
+    var suppliers = ViewBag.Suppliers as List<FlowerShop.Models.Supplier> ?? new List<FlowerShop.Models.Supplier>();
+}
+
+<div class="row g-4">
+    <!-- 1. Danh mục sản phẩm (Categories) -->
+    <div class="col-lg-6">
+        <div class="admin-card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-tags-fill text-danger me-2"></i>Danh Mục Chủ Đề (Categories)</h6>
+            <form action="@Url.Action("SaveCategory", "Product")" method="post" class="d-flex gap-2 mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="0" />
+                <input type="text" name="name" class="form-control form-control-sm" placeholder="Tên danh mục mới (VD: Hoa Chia Buồn)..." required />
+                <input type="hidden" name="isActive" value="true" />
+                <button type="submit" class="btn btn-sm btn-danger text-nowrap">+ Thêm</button>
+            </form>
+
+            <table class="table table-sm align-middle mb-0">
+                <thead class="small text-muted">
+                    <tr><th>Tên danh mục</th><th>Số SP</th><th>Hiển thị</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in categories)
+                    {
+                        <tr>
+                            <td class="fw-semibold small">@c.Name</td>
+                            <td><span class="badge bg-light text-dark border">@c.Products.Count</span></td>
+                            <td><span class="badge @(c.IsActive ? "bg-success" : "bg-secondary")">@(c.IsActive ? "Hiện" : "Ẩn")</span></td>
+                            <td class="text-end">
+                                <form action="@Url.Action("DeleteCategory", "Product")" method="post" class="d-inline" onsubmit="return confirm('Xóa danh mục @c.Name?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. Chủng loại hoa (FlowerCategories) -->
+    <div class="col-lg-6">
+        <div class="admin-card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-flower3 text-danger me-2"></i>Chủng Loại Hoa (FlowerCategories)</h6>
+            <form action="@Url.Action("SaveFlowerCategory", "Product")" method="post" class="row g-2 mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="0" />
+                <div class="col-sm-5">
+                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Tên loài hoa..." required />
+                </div>
+                <div class="col-sm-5">
+                    <input type="text" name="description" class="form-control form-control-sm" placeholder="Ý nghĩa ngắn..." />
+                </div>
+                <div class="col-sm-2 d-grid">
+                    <button type="submit" class="btn btn-sm btn-danger">+ Thêm</button>
+                </div>
+            </form>
+
+            <table class="table table-sm align-middle mb-0">
+                <thead class="small text-muted">
+                    <tr><th>Loài hoa</th><th>Mô tả</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var fc in flowerCategories)
+                    {
+                        <tr>
+                            <td class="fw-semibold small">@fc.Name</td>
+                            <td class="small text-muted">@fc.Description</td>
+                            <td class="text-end">
+                                <form action="@Url.Action("DeleteFlowerCategory", "Product")" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@fc.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. Nhà cung cấp (Suppliers) -->
+    <div class="col-12">
+        <div class="admin-card p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-truck-flatbed text-danger me-2"></i>Nhà Cung Cấp Nguồn Hoa (Suppliers)</h6>
+            <form action="@Url.Action("SaveSupplier", "Product")" method="post" class="row g-2 mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="0" />
+                <div class="col-md-3"><input type="text" name="name" class="form-control form-control-sm" placeholder="Tên nhà vườn / đối tác *" required /></div>
+                <div class="col-md-2"><input type="text" name="phone" class="form-control form-control-sm" placeholder="Số điện thoại" /></div>
+                <div class="col-md-3"><input type="email" name="email" class="form-control form-control-sm" placeholder="Email liên hệ" /></div>
+                <div class="col-md-3"><input type="text" name="address" class="form-control form-control-sm" placeholder="Địa chỉ vườn hoa" /></div>
+                <div class="col-md-1 d-grid"><button type="submit" class="btn btn-sm btn-danger">Lưu</button></div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="small text-muted">
+                        <tr><th>Tên nhà cung cấp</th><th>Điện thoại</th><th>Email</th><th>Địa chỉ</th><th>Số SP</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in suppliers)
+                        {
+                            <tr>
+                                <td class="fw-semibold small">@s.Name</td>
+                                <td class="small">@s.Phone</td>
+                                <td class="small">@s.Email</td>
+                                <td class="small text-muted">@s.Address</td>
+                                <td><span class="badge bg-light text-dark border">@s.Products.Count</span></td>
+                                <td class="text-end">
+                                    <form action="@Url.Action("DeleteSupplier", "Product")" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@s.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

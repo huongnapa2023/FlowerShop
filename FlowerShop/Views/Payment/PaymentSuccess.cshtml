@@ -1,0 +1,46 @@
+﻿@model FlowerShop.Models.Order
+@using FlowerShop.Services
+@{
+    ViewBag.Title = "Đặt hoa thành công - CHAM Flowers";
+}
+
+<div class="container py-5" style="max-width:680px">
+    <div class="bg-white p-4 p-md-5 rounded-4 border shadow-sm text-center">
+        <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px">
+            <i class="bi bi-check-lg display-4"></i>
+        </div>
+        <h2 class="fw-bold mb-2">Cảm Ơn Bạn Đã Đặt Hoa Tại CHAM Flowers!</h2>
+        <p class="text-muted">Đơn hàng <strong>#@Model.Id</strong> đã được gửi tới hệ thống quản trị để chuẩn bị hoa tươi.</p>
+
+        <div class="bg-light rounded-4 p-3 text-start small my-4 border">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Người nhận:</span>
+                <strong>@Model.RecipientName (@Model.RecipientPhone)</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Địa chỉ giao:</span>
+                <span>@Model.DeliveryAddress</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Phương thức thanh toán:</span>
+                <strong>@Model.PaymentMethod (@(Model.IsPaid ? "Đã thanh toán" : "Thanh toán khi nhận hàng"))</strong>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.VnPayTransactionNo))
+            {
+                <div class="d-flex justify-content-between mb-1 text-success">
+                    <span>Mã giao dịch VNPay:</span>
+                    <strong>@Model.VnPayTransactionNo</strong>
+                </div>
+            }
+            <div class="d-flex justify-content-between border-top pt-2 mt-2">
+                <span class="fw-bold">Tổng tiền:</span>
+                <strong class="text-danger fs-6">@AppHelpers.FormatVnd(Model.Total)</strong>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="@Url.Action("Details", "Order", new { id = Model.Id })" class="btn btn-nt-primary">Theo dõi tiến độ đơn hàng</a>
+            <a href="@Url.Action("Index", "Product")" class="btn btn-nt-outline">Tiếp tục mua sắm</a>
+        </div>
+    </div>
+</div>

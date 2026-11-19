@@ -1,0 +1,83 @@
+﻿@using FlowerShop.Services
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Tạo đơn hàng mới (Tại quầy / Điện thoại) - CHAM Flowers Executive CMS";
+    var products = ViewBag.Products as List<FlowerShop.Models.Product> ?? new List<FlowerShop.Models.Product>();
+    var customers = ViewBag.Customers as List<FlowerShop.Models.User> ?? new List<FlowerShop.Models.User>();
+}
+
+<div class="admin-card p-4" style="max-width:740px">
+    <h6 class="fw-bold mb-3">Khởi Tạo Đơn Hàng Mới Tại Quầy</h6>
+    <form action="@Url.Action("AdminCreate", "Order")" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Liên kết tài khoản khách (Tùy chọn)</label>
+                <select name="userId" class="form-select" onchange="fillCustomerInfo(this)">
+                    <option value="">-- Khách lẻ vãng lai --</option>
+                    @foreach (var u in customers)
+                    {
+                        <option value="@u.Id" data-name="@u.FullName" data-phone="@u.Phone" data-addr="@u.Address">@u.FullName (@u.Phone)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Phương thức thanh toán</label>
+                <select name="paymentMethod" class="form-select">
+                    <option value="COD">Tiền mặt / COD</option>
+                    <option value="VNPay">Chuyển khoản / VNPay</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Tên người nhận *</label>
+                <input type="text" id="rcName" name="recipientName" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Số điện thoại nhận *</label>
+                <input type="text" id="rcPhone" name="recipientPhone" class="form-control" required />
+            </div>
+            <div class="col-12">
+                <label class="form-label small fw-bold">Địa chỉ giao hàng *</label>
+                <input type="text" id="rcAddr" name="deliveryAddress" class="form-control" required />
+            </div>
+
+            <div class="col-md-8">
+                <label class="form-label small fw-bold">Chọn mẫu hoa *</label>
+                <select name="productId" class="form-select" required>
+                    @foreach (var p in products)
+                    {
+                        <option value="@p.Id">@p.Name — @AppHelpers.FormatVnd(p.Price) (Kho còn: @p.StockQuantity)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Số lượng *</label>
+                <input type="number" name="quantity" value="1" min="1" class="form-control" required />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label small fw-bold">Ghi chú / Nội dung thiệp</label>
+                <input type="text" name="note" class="form-control" placeholder="Lời chúc in trên banner/thiệp..." />
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-danger rounded-pill px-4">Tạo đơn hàng</button>
+            <a href="@Url.Action("AdminIndex", "Order")" class="btn btn-light border rounded-pill px-4">Hủy</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function fillCustomerInfo(sel) {
+            var opt = sel.options[sel.selectedIndex];
+            if (opt.value) {
+                document.getElementById('rcName').value = opt.getAttribute('data-name') || '';
+                document.getElementById('rcPhone').value = opt.getAttribute('data-phone') || '';
+                document.getElementById('rcAddr').value = opt.getAttribute('data-addr') || '';
+            }
+        }
+    </script>
+}

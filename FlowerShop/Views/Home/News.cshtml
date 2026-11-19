@@ -1,0 +1,36 @@
+﻿@model List<FlowerShop.Models.NewsArticle>
+@{
+    ViewData["Title"] = "Tin tức & Cẩm nang hoa tươi";
+}
+
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <span class="text-danger fw-bold small text-uppercase">Góc yêu hoa</span>
+        <h1 class="h2 fw-bold">Tin Tức & Cẩm Nang Hoa Tươi CHAM Flowers</h1>
+        <p class="text-muted">Bí quyết chăm sóc hoa tươi lâu và nghệ thuật tặng hoa tinh tế cho từng dịp đặc biệt.</p>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4">
+                <div class="flower-card">
+                    <a href="@Url.Action("NewsDetail", "Home", new { id = item.Id })">
+                        <img src="@(item.ImageUrl ?? "/images/samflora/editorial-2.jpg")" class="w-100" style="height:230px;object-fit:cover" alt="@item.Title" />
+                    </a>
+                    <div class="p-4 d-flex flex-column flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-danger-subtle text-danger">@item.CategoryName</span>
+                            <small class="text-muted">@item.CreatedAt.ToString("dd/MM/yyyy")</small>
+                        </div>
+                        <h5 class="fw-bold mb-2">
+                            <a href="@Url.Action("NewsDetail", "Home", new { id = item.Id })" class="text-dark text-decoration-none">@item.Title</a>
+                        </h5>
+                        <p class="text-muted small flex-grow-1">@item.Summary</p>
+                        <a href="@Url.Action("NewsDetail", "Home", new { id = item.Id })" class="btn btn-sm btn-nt-outline align-self-start">Đọc chi tiết →</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

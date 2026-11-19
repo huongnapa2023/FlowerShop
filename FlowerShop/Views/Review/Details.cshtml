@@ -1,0 +1,49 @@
+﻿@model FlowerShop.Models.Review
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = string.Format("Chi tiết Đánh giá #{0} - CHAM Flowers Executive CMS", Model.Id);
+}
+
+<div class="admin-card p-4" style="max-width:680px">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h5 class="fw-bold mb-1">@(Model.Product != null ? Model.Product.Name : "Sản phẩm")</h5>
+            <div class="text-muted small">Người gửi: <strong>@(Model.User != null ? Model.User.FullName : "Khách hàng")</strong> (@(Model.User != null ? Model.User.Email : "")) • @Model.CreatedAt.ToString("HH:mm dd/MM/yyyy")</div>
+        </div>
+        <span class="badge @(Model.IsApproved ? "bg-success" : "bg-warning text-dark")">
+            @(Model.IsApproved ? "Đã phê duyệt" : "Chờ phê duyệt")
+        </span>
+    </div>
+
+    <div class="text-warning mb-2">
+        @for (int i = 0; i < Model.Rating; i++)
+        {
+            <i class="bi bi-star-fill"></i>
+        }
+        <span class="text-dark fw-semibold ms-1">(@Model.Rating / 5 sao)</span>
+    </div>
+
+    <div class="p-3 rounded-3 bg-light border mb-4">@Model.Content</div>
+
+    <div class="d-flex gap-2">
+        @if (!Model.IsApproved)
+        {
+            <form action="@Url.Action("Approve", "Review", new { id = Model.Id })" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success rounded-pill px-4"><i class="bi bi-check-lg me-1"></i>Phê duyệt hiển thị</button>
+            </form>
+        }
+        else
+        {
+            <form action="@Url.Action("Hide", "Review", new { id = Model.Id })" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-secondary rounded-pill px-4">Ẩn khỏi trang web</button>
+            </form>
+        }
+        <form action="@Url.Action("Delete", "Review", new { id = Model.Id })" method="post" onsubmit="return confirm('Xóa vĩnh viễn đánh giá này?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger rounded-pill px-3">Xóa</button>
+        </form>
+        <a href="@Url.Action("Index", "Review")" class="btn btn-light border rounded-pill px-3">Quay lại</a>
+    </div>
+</div>

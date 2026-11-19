@@ -1,0 +1,657 @@
+@model List<FlowerShop.Models.User>
+@{
+    ViewBag.Title = "Phân quyền Cơ sở & Ma trận CRUD Admin con";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    var allPermissions = ViewBag.AllPermissions as List<string> ?? FlowerShop.Models.AdminPermissions.GetAll();
+    var descriptions = ViewBag.PermissionDescriptions as Dictionary<string, string> ?? FlowerShop.Models.AdminPermissions.Descriptions;
+    var badges = ViewBag.PermissionBadges as Dictionary<string, string> ?? FlowerShop.Models.AdminPermissions.Badges;
+}
+
+<style>
+    .crud-sub-box {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px dashed #e2e8f0;
+        transition: opacity 0.2s ease;
+    }
+    .crud-sub-box.disabled-box {
+        opacity: 0.32;
+        pointer-events: none;
+    }
+    .crud-pill-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+        cursor: pointer;
+        user-select: none;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #64748b;
+        transition: all 0.15s ease;
+    }
+    .crud-pill-input {
+        display: none;
+    }
+    .crud-pill-input:checked + .crud-pill-create {
+        background: #dcfce7;
+        border-color: #86efac;
+        color: #15803d;
+    }
+    .crud-pill-input:checked + .crud-pill-edit {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1d4ed8;
+    }
+    .crud-pill-input:checked + .crud-pill-delete {
+        background: #ffe4e6;
+        border-color: #fda4af;
+        color: #be123c;
+    }
+    .crud-pill-input:not(:checked) + .crud-pill-delete {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #94a3b8;
+        text-decoration: line-through;
+    }
+    .branch-badge-input {
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 999px;
+        padding: 2px 10px;
+        width: 175px;
+    }
+    .branch-badge-input:focus {
+        outline: none;
+        border-color: #e11d48;
+        background: #fff;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Khối Form Tạo Admin Con Mới (Collapse) -->
+    <div class="collapse mb-4" id="boxCreateAdmin">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-gradient text-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2" style="background: linear-gradient(135deg, #881337 0%, #be123c 100%);">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-person-badge-fill me-2"></i>Tạo Mới Tài Khoản Admin Cơ Sở & Phân Quyền Chi Tiết</h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-xs btn-light rounded-pill px-3 py-1 small fw-semibold" onclick="applyNewAdminPreset(true)">
+                        <i class="bi bi-check-all text-success me-1"></i>Cấp đủ Thêm • Sửa • Xoá
+                    </button>
+                    <button type="button" class="btn btn-xs btn-warning rounded-pill px-3 py-1 small fw-semibold text-dark" onclick="applyNewAdminPreset(false)">
+                        <i class="bi bi-shield-slash me-1"></i>Giới hạn: Chỉ Thêm • Sửa
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-4 bg-white">
+                @using (Html.BeginForm("CreateAdmin", "AdminManager", FormMethod.Post, new { @class = "row g-3" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Email đăng nhập (*)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-envelope-at"></i></span>
+                            <input type="email" name="email" class="form-control" placeholder="vd: bacninh@chamflowers.vn" required />
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Họ và tên Admin (*)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" name="fullName" class="form-control" placeholder="vd: Quản lý Cơ sở Bắc Ninh" required />
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Thuộc Cơ sở / Chi nhánh (*)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill text-danger"></i></span>
+                            <input type="text" name="address" list="branchList" class="form-control" placeholder="vd: Cơ sở Bắc Ninh" value="Cơ sở Bắc Ninh" required />
+                            <datalist id="branchList">
+                                <option value="Cơ sở Hà Nội"></option>
+                                <option value="Cơ sở Bắc Ninh"></option>
+                                <option value="Cơ sở TP.HCM"></option>
+                                <option value="Cơ sở Hải Phòng"></option>
+                                <option value="Cơ sở Đà Nẵng"></option>
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Mật khẩu khởi tạo (*)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-key-fill"></i></span>
+                            <input type="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required minlength="6" />
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-3">
+                        <label class="form-label fw-bold text-dark d-block">
+                            <i class="bi bi-sliders2 text-danger me-1"></i> Phân quyền Phân hệ & Hành động chi tiết (Xem / Thêm / Sửa / Xoá):
+                        </label>
+                        <div class="row g-3 p-3 bg-light rounded-4 border">
+                            @foreach (var perm in allPermissions)
+                            {
+                                string desc = descriptions.ContainsKey(perm) ? descriptions[perm] : perm;
+                                string icon = badges.ContainsKey(perm) ? badges[perm] : "bi-check-circle";
+                                bool hasCrud = FlowerShop.Models.AdminPermissions.SupportsCrud(perm);
+
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="p-3 bg-white rounded-3 border h-100">
+                                        <div class="form-check">
+                                            <input class="form-check-input new-perm-main" type="checkbox" name="permissions" value="@perm" id="new_perm_@perm" onchange="toggleNewCrudBox('@perm', this.checked)" />
+                                            <label class="form-check-label fw-bold small text-dark" for="new_perm_@perm">
+                                                <i class="bi @icon text-danger me-1"></i>@perm - <span class="fw-normal text-muted">@desc</span>
+                                            </label>
+                                        </div>
+                                        @if (hasCrud)
+                                        {
+                                            <div id="new_crud_box_@perm" class="d-flex flex-wrap gap-2 mt-2 pt-2 border-top disabled-box" style="opacity:0.35;pointer-events:none">
+                                                <label class="mb-0">
+                                                    <input type="checkbox" name="permissions" value="@(perm)_CREATE" class="crud-pill-input new-crud-cb new-crud-create-@perm" />
+                                                    <span class="crud-pill-label crud-pill-create"><i class="bi bi-plus-circle"></i> +Thêm</span>
+                                                </label>
+                                                <label class="mb-0">
+                                                    <input type="checkbox" name="permissions" value="@(perm)_EDIT" class="crud-pill-input new-crud-cb new-crud-edit-@perm" />
+                                                    <span class="crud-pill-label crud-pill-edit"><i class="bi bi-pencil-square"></i> ✎Sửa</span>
+                                                </label>
+                                                <label class="mb-0">
+                                                    <input type="checkbox" name="permissions" value="@(perm)_DELETE" class="crud-pill-input new-crud-cb new-crud-delete-@perm" />
+                                                    <span class="crud-pill-label crud-pill-delete"><i class="bi bi-trash3"></i> 🗑Xoá</span>
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-12 text-end mt-3">
+                        <button type="button" class="btn btn-light border rounded-pill px-4 me-2" data-bs-toggle="collapse" data-bs-target="#boxCreateAdmin">Hủy</button>
+                        <button type="submit" class="btn btn-nt-primary rounded-pill px-4">
+                            <i class="bi bi-shield-check me-1"></i> Lưu & Khởi Tạo Admin Cơ Sở
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng Ma Trận Phân Quyền Đa Tầng (Matrix Table) -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-grid-3x3-gap-fill text-danger me-2"></i>Ma Trận Phân Quyền Theo Cơ Sở & Cấp Độ Hành Động (CRUD)</h5>
+                    <span class="text-muted small">Tích chọn ô trên để bật quyền <strong>Xem phân hệ</strong>, sau đó bật/tắt chi tiết từng quyền <strong>+Thêm</strong>, <strong>✎Sửa</strong>, <strong>🗑Xoá</strong> bên dưới</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill small">
+                        <i class="bi bi-people-fill me-1 text-danger"></i> @Model.Count Nhân sự Quản trị
+                    </span>
+                    <button class="btn btn-sm btn-nt-primary rounded-pill px-3 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#boxCreateAdmin">
+                        <i class="bi bi-person-plus-fill me-1"></i> Thêm Nhân viên cơ sở
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top">
+                <span class="small fw-bold text-muted me-1"><i class="bi bi-funnel-fill text-danger me-1"></i>Lọc nhanh Cơ sở:</span>
+                <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('', this)">Tất cả (@Model.Count)</button>
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('Hà Nội', this)"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Cơ sở Hà Nội</button>
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('Bắc Ninh', this)"><i class="bi bi-geo-alt-fill text-warning me-1"></i>Cơ sở Bắc Ninh</button>
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('Hải Phòng', this)"><i class="bi bi-geo-alt-fill text-primary me-1"></i>Cơ sở Hải Phòng</button>
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('Đà Nẵng', this)"><i class="bi bi-geo-alt-fill text-success me-1"></i>Cơ sở Đà Nẵng</button>
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('Quảng Ninh', this)"><i class="bi bi-geo-alt-fill text-info me-1"></i>Cơ sở Quảng Ninh</button>
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter" onclick="filterByBranch('TP.HCM', this)"><i class="bi bi-geo-alt-fill text-secondary me-1"></i>Cơ sở TP.HCM</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap" style="min-width:1280px">
+                <thead class="table-light text-center" style="font-size:0.78rem">
+                    <tr>
+                        <th class="text-start ps-4" style="width:240px">Quản trị viên & Cơ sở</th>
+                        @foreach (var perm in allPermissions)
+                        {
+                            string icon = badges.ContainsKey(perm) ? badges[perm] : "bi-check";
+                            <th style="width:105px" title="@(descriptions.ContainsKey(perm) ? descriptions[perm] : perm)">
+                                <i class="bi @icon d-block text-danger fs-6 mb-1"></i>
+                                <span class="fw-bold">@perm</span>
+                            </th>
+                        }
+                        <th style="width:105px">Trạng thái</th>
+                        <th style="width:145px" class="pe-4 text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var admin in Model)
+                    {
+                        var allowedSet = new HashSet<string>(
+                            !string.IsNullOrWhiteSpace(admin.AllowedPermissions)
+                                ? admin.AllowedPermissions.Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim().ToUpperInvariant())
+                                : Enumerable.Empty<string>(),
+                            StringComparer.OrdinalIgnoreCase);
+
+                        bool hasGranularMarker = allowedSet.Contains("CRUD_GRANULAR");
+
+                        <tr class="admin-matrix-row @(admin.IsSuperAdmin ? "table-light" : "")" data-branch="@(admin.Address ?? "")">
+                            <!-- Cột Thông tin Admin & Cơ sở -->
+                            <td class="ps-4 py-3">
+                                @if (!admin.IsSuperAdmin)
+                                {
+                                    @Html.Raw("<form id=\"form_perm_" + admin.Id + "\" action=\"" + Url.Action("SavePermissions", "AdminManager") + "\" method=\"post\" class=\"d-none\">")
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@admin.Id" />
+                                    @Html.Raw("</form>")
+                                }
+                                <div class="d-flex align-items-start gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm flex-shrink-0 mt-1"
+                                         style="width:38px;height:38px;background:@(admin.IsSuperAdmin ? "linear-gradient(135deg, #881337, #be123c)" : "linear-gradient(135deg, #334155, #1e293b)");font-size:0.85rem">
+                                        @FlowerShop.Services.AppHelpers.GetInitials(admin.FullName)
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark d-flex align-items-center gap-1">
+                                            <a href="@Url.Action("StaffDetails", "AdminManager", new { id = admin.Id })" class="text-dark text-decoration-none fw-bold" title="Bấm để xem chi tiết hồ sơ nhân viên này">
+                                                @admin.FullName
+                                            </a>
+                                            @if (admin.IsSuperAdmin)
+                                            {
+                                                <i class="bi bi-patch-check-fill text-danger" title="Admin Tổng Toàn Quyền"></i>
+                                            }
+                                            <a href="@Url.Action("StaffDetails", "AdminManager", new { id = admin.Id })" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-2 py-0 ms-1 rounded-pill" style="font-size:0.65rem" title="Xem hồ sơ chi tiết">
+                                                <i class="bi bi-person-vcard me-1"></i>Hồ sơ
+                                            </a>
+                                        </div>
+                                        <div class="text-muted" style="font-size:0.74rem">@admin.Email</div>
+                                        <div class="mt-1">
+                                            @if (admin.IsSuperAdmin)
+                                            {
+                                                <span class="badge bg-danger px-2 py-1 rounded-pill" style="font-size:0.68rem">
+                                                    <i class="bi bi-building-fill-check me-1"></i>Trụ sở Tổng (Toàn quyền)
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <i class="bi bi-geo-alt-fill text-danger" style="font-size:0.75rem" title="Đổi tên Cơ sở / Chi nhánh"></i>
+                                                    <input type="text"
+                                                           name="branchName"
+                                                           form="form_perm_@admin.Id"
+                                                           value="@(string.IsNullOrWhiteSpace(admin.Address) ? "Chi nhánh CHAM Flowers" : admin.Address)"
+                                                           class="branch-badge-input"
+                                                           list="branchList"
+                                                           title="Nhập tên Cơ sở / Chi nhánh của Admin này" />
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- 9 Cột Phân hệ + Nút tích con (+Thêm / ✎Sửa / 🗑Xoá) -->
+                            @if (admin.IsSuperAdmin)
+                            {
+                                foreach (var perm in allPermissions)
+                                {
+                                    bool hasCrud = FlowerShop.Models.AdminPermissions.SupportsCrud(perm);
+                                    <td class="text-center align-top py-3">
+                                        <div class="form-check form-check-inline m-0">
+                                            <input class="form-check-input" type="checkbox" checked disabled style="cursor:not-allowed" />
+                                        </div>
+                                        @if (hasCrud)
+                                        {
+                                            <div class="crud-sub-box">
+                                                <span class="crud-pill-label" style="background:#dcfce7;border-color:#86efac;color:#15803d">+Thêm</span>
+                                                <span class="crud-pill-label" style="background:#dbeafe;border-color:#93c5fd;color:#1d4ed8">✎Sửa</span>
+                                                <span class="crud-pill-label" style="background:#ffe4e6;border-color:#fda4af;color:#be123c">🗑Xoá</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mt-2"><span class="badge bg-light text-muted border" style="font-size:0.65rem">Toàn phần</span></div>
+                                        }
+                                    </td>
+                                }
+                            }
+                            else
+                            {
+                                foreach (var perm in allPermissions)
+                                {
+                                    bool isMainChecked = allowedSet.Contains(perm);
+                                    bool hasCrud = FlowerShop.Models.AdminPermissions.SupportsCrud(perm);
+
+                                    string cCode = perm + "_CREATE";
+                                    string eCode = perm + "_EDIT";
+                                    string dCode = perm + "_DELETE";
+
+                                    bool isCreateChecked = isMainChecked && (allowedSet.Contains(cCode) || (!hasGranularMarker && !allowedSet.Contains(eCode) && !allowedSet.Contains(dCode)));
+                                    bool isEditChecked = isMainChecked && (allowedSet.Contains(eCode) || (!hasGranularMarker && !allowedSet.Contains(cCode) && !allowedSet.Contains(dCode)));
+                                    bool isDeleteChecked = isMainChecked && allowedSet.Contains(dCode);
+
+                                    <td class="text-center align-top py-3">
+                                        <div class="form-check form-check-inline m-0">
+                                            <input class="form-check-input perm-main-@admin.Id"
+                                                   type="checkbox"
+                                                   name="permissions"
+                                                   value="@perm"
+                                                   data-perm="@perm"
+                                                   form="form_perm_@admin.Id"
+                                                   @(isMainChecked ? "checked" : "")
+                                                   onchange="onMainPermToggle(@admin.Id, '@perm', this.checked)"
+                                                   title="Bật/Tắt quyền truy cập phân hệ @perm" />
+                                        </div>
+
+                                        @if (hasCrud)
+                                        {
+                                            <div id="crud_box_@(admin.Id)_@(perm)" class="crud-sub-box @(isMainChecked ? "" : "disabled-box")">
+                                                <label class="mb-0" title="Quyền Thêm mới trong @perm">
+                                                    <input type="checkbox"
+                                                           name="permissions"
+                                                           value="@cCode"
+                                                           form="form_perm_@admin.Id"
+                                                           class="crud-pill-input perm-sub-@admin.Id perm-create-@admin.Id"
+                                                           data-perm="@perm"
+                                                           @(isCreateChecked ? "checked" : "") />
+                                                    <span class="crud-pill-label crud-pill-create">+Thêm</span>
+                                                </label>
+                                                <label class="mb-0" title="Quyền Chỉnh sửa / Cập nhật trong @perm">
+                                                    <input type="checkbox"
+                                                           name="permissions"
+                                                           value="@eCode"
+                                                           form="form_perm_@admin.Id"
+                                                           class="crud-pill-input perm-sub-@admin.Id perm-edit-@admin.Id"
+                                                           data-perm="@perm"
+                                                           @(isEditChecked ? "checked" : "") />
+                                                    <span class="crud-pill-label crud-pill-edit">✎Sửa</span>
+                                                </label>
+                                                <label class="mb-0" title="Quyền Xoá / Huỷ trong @perm (Bỏ tích để cấm xoá)">
+                                                    <input type="checkbox"
+                                                           name="permissions"
+                                                           value="@dCode"
+                                                           form="form_perm_@admin.Id"
+                                                           class="crud-pill-input perm-sub-@admin.Id perm-delete-@admin.Id"
+                                                           data-perm="@perm"
+                                                           @(isDeleteChecked ? "checked" : "") />
+                                                    <span class="crud-pill-label crud-pill-delete">🗑Xoá</span>
+                                                </label>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mt-2">
+                                                <span class="badge bg-light text-muted border" style="font-size:0.65rem">Xem & Trực</span>
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                            }
+
+                            <!-- Cột Trạng thái -->
+                            <td class="text-center">
+                                @if (admin.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
+                                        <i class="bi bi-check-circle me-1"></i>Hoạt động
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill small">
+                                        <i class="bi bi-lock-fill me-1"></i>Đang khóa
+                                    </span>
+                                }
+                            </td>
+
+                            <!-- Cột Thao tác -->
+                            <td class="pe-4 text-end">
+                                @if (admin.IsSuperAdmin)
+                                {
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <a href="@Url.Action("StaffDetails", "AdminManager", new { id = admin.Id })" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm" title="Xem hồ sơ Admin Tổng">
+                                            <i class="bi bi-person-vcard me-1"></i>Hồ sơ
+                                        </a>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill small">
+                                            <i class="bi bi-infinity me-1"></i>Toàn quyền
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <a href="@Url.Action("StaffDetails", "AdminManager", new { id = admin.Id })" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 shadow-sm small" title="Xem chi tiết hồ sơ nhân viên này">
+                                            <i class="bi bi-person-lines-fill me-1"></i>Hồ sơ
+                                        </a>
+
+                                        <button type="submit" form="form_perm_@admin.Id" class="btn btn-sm btn-nt-primary rounded-pill px-3 shadow-sm" title="Lưu phân quyền của cơ sở này">
+                                            <i class="bi bi-floppy-fill me-1"></i>Lưu
+                                        </button>
+
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-light border rounded-circle" type="button" data-bs-toggle="dropdown" style="width:30px;height:30px;padding:0">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 p-2 small">
+                                                <li class="dropdown-header fw-bold text-dark">Hồ sơ nhân sự</li>
+                                                <li>
+                                                    <a class="dropdown-item py-1 text-primary fw-semibold" href="@Url.Action("StaffDetails", "AdminManager", new { id = admin.Id })">
+                                                        <i class="bi bi-person-vcard me-2"></i>Xem chi tiết hồ sơ nhân sự
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1" /></li>
+                                                <li class="dropdown-header fw-bold text-dark">Mẫu phân quyền nhanh</li>
+                                                <li>
+                                                    <a class="dropdown-item py-1" href="javascript:void(0)" onclick="applyRowPreset(@admin.Id, 'FULL')">
+                                                        <i class="bi bi-check-all text-success me-2"></i>Cấp đủ Thêm • Sửa • Xoá
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1" href="javascript:void(0)" onclick="applyRowPreset(@admin.Id, 'NO_DELETE')">
+                                                        <i class="bi bi-shield-exclamation text-warning me-2"></i>Giới hạn: Chỉ Thêm • Sửa
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1" href="javascript:void(0)" onclick="applyRowPreset(@admin.Id, 'NONE')">
+                                                        <i class="bi bi-x-circle text-muted me-2"></i>Thu hồi toàn bộ quyền
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1" /></li>
+                                                <li>
+                                                    @using (Html.BeginForm("ToggleActive", "AdminManager", FormMethod.Post, new { onsubmit = "return confirm('Xác nhận thay đổi trạng thái hoạt động của tài khoản này?');" }))
+                                                    {
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="userId" value="@admin.Id" />
+                                                        <button type="submit" class="dropdown-item py-1 @(admin.IsActive ? "text-danger" : "text-success")">
+                                                            <i class="bi @(admin.IsActive ? "bi-lock-fill" : "bi-unlock-fill") me-2"></i>@(admin.IsActive ? "Khóa tài khoản" : "Mở khóa tài khoản")
+                                                        </button>
+                                                    }
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1 text-primary" href="javascript:void(0)" onclick="openResetPasswordModal(@admin.Id, '@admin.Email')">
+                                                        <i class="bi bi-key-fill me-2"></i>Đặt lại mật khẩu
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đặt Lại Mật Khẩu Nhanh Cho Admin Con -->
+<div class="modal fade" id="modalResetPassword" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark"><i class="bi bi-key-fill text-danger me-2"></i>Đặt Lại Mật Khẩu Admin Cơ Sở</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            @using (Html.BeginForm("ResetPassword", "AdminManager", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" id="resetUserId" value="" />
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Bạn đang đặt lại mật khẩu cho tài khoản: <strong id="resetUserEmail" class="text-danger"></strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mật khẩu mới (*)</label>
+                        <input type="password" name="newPassword" class="form-control" placeholder="Tối thiểu 6 ký tự..." required minlength="6" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-sm btn-nt-primary rounded-pill px-4">Lưu mật khẩu mới</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function onMainPermToggle(userId, perm, isChecked) {
+            var box = document.getElementById('crud_box_' + userId + '_' + perm);
+            if (!box) return;
+            var inputs = box.querySelectorAll('input[type="checkbox"]');
+            if (isChecked) {
+                box.classList.remove('disabled-box');
+                var anyChecked = false;
+                inputs.forEach(function (cb) { if (cb.checked) anyChecked = true; });
+                if (!anyChecked) {
+                    inputs.forEach(function (cb) {
+                        if (!cb.value.endsWith('_DELETE')) cb.checked = true;
+                    });
+                }
+            } else {
+                box.classList.add('disabled-box');
+                inputs.forEach(function (cb) { cb.checked = false; });
+            }
+        }
+
+        function applyRowPreset(userId, mode) {
+            var mains = document.querySelectorAll('.perm-main-' + userId);
+            var subs = document.querySelectorAll('.perm-sub-' + userId);
+
+            if (mode === 'NONE') {
+                mains.forEach(function (cb) {
+                    cb.checked = false;
+                    onMainPermToggle(userId, cb.getAttribute('data-perm'), false);
+                });
+                return;
+            }
+
+            // Nếu chưa chọn phân hệ nào thì bật sẵn ORDER và PRODUCT
+            var anyMain = false;
+            mains.forEach(function (cb) { if (cb.checked) anyMain = true; });
+            if (!anyMain) {
+                mains.forEach(function (cb) {
+                    var p = cb.getAttribute('data-perm');
+                    if (p === 'ORDER' || p === 'PRODUCT') cb.checked = true;
+                });
+            }
+
+            mains.forEach(function (cb) {
+                var p = cb.getAttribute('data-perm');
+                var box = document.getElementById('crud_box_' + userId + '_' + p);
+                if (box) {
+                    if (cb.checked) box.classList.remove('disabled-box');
+                    else box.classList.add('disabled-box');
+                }
+            });
+
+            subs.forEach(function (cb) {
+                var p = cb.getAttribute('data-perm');
+                var mainCb = document.querySelector('.perm-main-' + userId + '[data-perm="' + p + '"]');
+                if (!mainCb || !mainCb.checked) {
+                    cb.checked = false;
+                    return;
+                }
+                if (mode === 'FULL') {
+                    cb.checked = true;
+                } else if (mode === 'NO_DELETE') {
+                    cb.checked = !cb.value.endsWith('_DELETE');
+                }
+            });
+        }
+
+        function toggleNewCrudBox(perm, isChecked) {
+            var box = document.getElementById('new_crud_box_' + perm);
+            if (!box) return;
+            var inputs = box.querySelectorAll('input[type="checkbox"]');
+            if (isChecked) {
+                box.style.opacity = '1';
+                box.style.pointerEvents = 'auto';
+                inputs.forEach(function (cb) {
+                    if (!cb.value.endsWith('_DELETE')) cb.checked = true;
+                });
+            } else {
+                box.style.opacity = '0.35';
+                box.style.pointerEvents = 'none';
+                inputs.forEach(function (cb) { cb.checked = false; });
+            }
+        }
+
+        function applyNewAdminPreset(allowDelete) {
+            var defaultModules = ['ORDER', 'PRODUCT'];
+            document.querySelectorAll('.new-perm-main').forEach(function (cb) {
+                var p = cb.value;
+                var shouldCheck = defaultModules.indexOf(p) >= 0;
+                cb.checked = shouldCheck;
+                var box = document.getElementById('new_crud_box_' + p);
+                if (box) {
+                    box.style.opacity = shouldCheck ? '1' : '0.35';
+                    box.style.pointerEvents = shouldCheck ? 'auto' : 'none';
+                    box.querySelectorAll('input[type="checkbox"]').forEach(function (sub) {
+                        if (!shouldCheck) sub.checked = false;
+                        else sub.checked = allowDelete ? true : !sub.value.endsWith('_DELETE');
+                    });
+                }
+            });
+        }
+
+        function openResetPasswordModal(userId, email) {
+            document.getElementById('resetUserId').value = userId;
+            document.getElementById('resetUserEmail').textContent = email;
+            var modal = new bootstrap.Modal(document.getElementById('modalResetPassword'));
+            modal.show();
+        }
+
+        function filterByBranch(keyword, btn) {
+            document.querySelectorAll('.js-branch-filter').forEach(function (b) {
+                b.className = 'btn btn-sm btn-light border rounded-pill px-3 py-1 small js-branch-filter';
+            });
+            if (btn) {
+                btn.className = 'btn btn-sm btn-dark rounded-pill px-3 py-1 small js-branch-filter';
+            }
+            var kw = (keyword || '').toLowerCase();
+            document.querySelectorAll('.admin-matrix-row').forEach(function (row) {
+                var br = (row.getAttribute('data-branch') || '').toLowerCase();
+                if (!kw || br.indexOf(kw) >= 0) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

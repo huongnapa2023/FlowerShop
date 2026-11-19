@@ -1,0 +1,313 @@
+@model FlowerShop.Models.HotDealPopup
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Popup Builder - Chỉnh sửa Thiết kế Popup";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="bi bi-sliders text-danger"></i> Popup Builder - Chỉnh Sửa Thiết Kế Popup #@Model.Id
+    </h5>
+    <a href="@Url.Action("Manage", "HotDeal")" class="btn btn-sm btn-light border rounded-pill px-3">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+    </a>
+</div>
+
+<form action="@Url.Action("EditHotDealPopup", "HotDeal", new { id = Model.Id })" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @if (!ViewData.ModelState.IsValid)
+    {
+        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small rounded-3 mb-3" })
+    }
+
+    <div class="row g-4">
+        <!-- CỘT TRÁI: BẢNG ĐIỀU KHIỂN BUILDER -->
+        <div class="col-lg-7">
+            <!-- 1. Chọn bố cục (Layout Template) -->
+            <div class="admin-card p-4 mb-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-layout-wtf text-danger me-2"></i>1. Chọn Kiểu Bố Cục (Layout Template)</h6>
+                <input type="hidden" name="LayoutType" id="inpLayoutType" value="@(Model.LayoutType ?? "TopImage")" />
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4 border text-center layout-option @(Model.LayoutType == "TopImage" || string.IsNullOrEmpty(Model.LayoutType) ? "border-danger bg-danger-subtle fw-bold" : "bg-light")"
+                             style="cursor:pointer" onclick="selectLayout('TopImage', this)">
+                            <i class="bi bi-card-heading fs-3 text-danger d-block mb-1"></i>
+                            <div class="small">Ảnh Trên - Chữ Dưới</div>
+                            <div class="text-muted" style="font-size:0.7rem">Chuẩn truyền thống</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4 border text-center layout-option @(Model.LayoutType == "SplitLeft" ? "border-danger bg-danger-subtle fw-bold" : "bg-light")"
+                             style="cursor:pointer" onclick="selectLayout('SplitLeft', this)">
+                            <i class="bi bi-layout-split fs-3 text-danger d-block mb-1"></i>
+                            <div class="small">Chia 2 Cột Trái/Phải</div>
+                            <div class="text-muted" style="font-size:0.7rem">Sang trọng, hiện đại</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4 border text-center layout-option @(Model.LayoutType == "PosterOverlay" ? "border-danger bg-danger-subtle fw-bold" : "bg-light")"
+                             style="cursor:pointer" onclick="selectLayout('PosterOverlay', this)">
+                            <i class="bi bi-aspect-ratio-fill fs-3 text-danger d-block mb-1"></i>
+                            <div class="small">Poster Toàn Khung</div>
+                            <div class="text-muted" style="font-size:0.7rem">Chữ nổi trên nền ảnh</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Nội dung & Nút CTA -->
+            <div class="admin-card p-4 mb-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-chat-square-quote-fill text-danger me-2"></i>2. Nội Dung Thông Điệp & Nút Bấm (CTA)</h6>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Nhãn nổi (Badge Text)</label>
+                        @Html.TextBoxFor(m => m.BadgeText, new { @class = "form-control", id = "inpBadge", oninput = "updatePreview()" })
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label small fw-bold">Tiêu đề chính (*)</label>
+                        @Html.TextBoxFor(m => m.Title, new { @class = "form-control", id = "inpTitle", required = "required", oninput = "updatePreview()" })
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Mô tả chi tiết</label>
+                        @Html.TextAreaFor(m => m.Subtitle, new { @class = "form-control", id = "inpSubtitle", rows = "2", oninput = "updatePreview()" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Mã Voucher đính kèm</label>
+                        @Html.TextBoxFor(m => m.CouponCode, new { @class = "form-control font-monospace text-uppercase fw-bold", id = "inpCoupon", oninput = "updatePreview()" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Mức giảm giá (%)</label>
+                        @Html.TextBoxFor(m => m.DiscountPercent, new { @class = "form-control", type = "number", min = "0", max = "100", id = "inpDiscount", oninput = "updatePreview()" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Chữ trên nút bấm (Button Text)</label>
+                        @Html.TextBoxFor(m => m.ButtonText, new { @class = "form-control", id = "inpBtnText", oninput = "updatePreview()" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Đường dẫn đích (Nếu không chọn SP)</label>
+                        @Html.TextBoxFor(m => m.TargetUrl, new { @class = "form-control" })
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Hoặc gắn thẳng vào 1 Sản phẩm cụ thể</label>
+                        @Html.DropDownListFor(m => m.ProductId, ViewBag.Products as SelectList, "-- Dẫn tới Đường dẫn đích bên trên --", new { @class = "form-select" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Màu sắc & Hình ảnh -->
+            <div class="admin-card p-4 mb-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-palette-fill text-danger me-2"></i>3. Phối Màu Sắc & Hình Ảnh</h6>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">Chọn nhanh bảng màu mẫu (Presets):</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm border rounded-pill px-3" style="background:#ffffff;color:#be123c" onclick="applyPreset('#ffffff','#1e293b','#be123c')">🌸 Trắng Hồng Ruby</button>
+                        <button type="button" class="btn btn-sm border rounded-pill px-3" style="background:#0f172a;color:#f59e0b" onclick="applyPreset('#0f172a','#f8fafc','#e11d48')">👑 Đêm Hoàng Gia</button>
+                        <button type="button" class="btn btn-sm border rounded-pill px-3" style="background:#f0fdf4;color:#15803d" onclick="applyPreset('#f0fdf4','#14532d','#15803d')">🎄 Xanh Giáng Sinh</button>
+                        <button type="button" class="btn btn-sm border rounded-pill px-3" style="background:#fffbeb;color:#b45309" onclick="applyPreset('#fffbeb','#78350f','#d97706')">🧧 Vàng Tết Tài Lộc</button>
+                        <button type="button" class="btn btn-sm border rounded-pill px-3" style="background:#fdf2f8;color:#be185d" onclick="applyPreset('#fdf2f8','#831843','#db2777')">💖 Hồng Valentine</button>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Màu nền Popup</label>
+                        <div class="input-group input-group-sm">
+                            <input type="color" id="pickBg" class="form-control form-control-color" value="@(Model.BackgroundColor ?? "#ffffff")" onchange="syncColor('Bg', this.value)" />
+                            @Html.TextBoxFor(m => m.BackgroundColor, new { @class = "form-control font-monospace", id = "inpBg", oninput = "syncColor('Bg', this.value)" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Màu chữ nội dung</label>
+                        <div class="input-group input-group-sm">
+                            <input type="color" id="pickText" class="form-control form-control-color" value="@(Model.TextColor ?? "#1e293b")" onchange="syncColor('Text', this.value)" />
+                            @Html.TextBoxFor(m => m.TextColor, new { @class = "form-control font-monospace", id = "inpText", oninput = "syncColor('Text', this.value)" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Màu nhấn (Nút & Tiêu đề)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="color" id="pickAccent" class="form-control form-control-color" value="@(Model.AccentColor ?? "#be123c")" onchange="syncColor('Accent', this.value)" />
+                            @Html.TextBoxFor(m => m.AccentColor, new { @class = "form-control font-monospace", id = "inpAccent", oninput = "syncColor('Accent', this.value)" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Tải ảnh mới thay thế (.jpg, .png, .webp)</label>
+                        <input type="file" name="imageFile" class="form-control" accept="image/*" onchange="previewLocalFile(this)" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Hoặc dán link URL ảnh</label>
+                        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", id = "inpImgUrl", oninput = "updatePreview()" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Hành vi & Lịch chạy -->
+            <div class="admin-card p-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-sliders text-danger me-2"></i>4. Điều Kiện Hiển Thị & Lịch Trình Tự Động</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Độ trễ hiển thị (Giây sau khi vào web)</label>
+                        @Html.TextBoxFor(m => m.DelaySeconds, new { @class = "form-control", type = "number", min = "0", max = "60" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Tần suất hiển thị</label>
+                        <select name="ShowFrequency" class="form-select">
+                            <option value="OncePerSession" @(Model.ShowFrequency == "OncePerSession" ? "selected" : "")>1 lần mỗi phiên truy cập (Khuyên dùng)</option>
+                            <option value="EveryLoad" @(Model.ShowFrequency == "EveryLoad" ? "selected" : "")>Mỗi lần tải trang chủ (Test / Sự kiện lớn)</option>
+                            <option value="OncePerDay" @(Model.ShowFrequency == "OncePerDay" ? "selected" : "")>Chỉ hiện 1 lần mỗi ngày</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Thời gian bắt đầu (StartDate)</label>
+                        <input type="datetime-local" name="StartDate" value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Thời gian kết thúc (EndDate)</label>
+                        <input type="datetime-local" name="EndDate" value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", role = "switch" })
+                            <label for="IsActive" class="form-check-label fw-bold">Kích hoạt hiển thị Popup này</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-save me-1"></i> Cập Nhật Thiết Kế Popup
+                    </button>
+                    <a href="@Url.Action("Manage", "HotDeal")" class="btn btn-light border rounded-pill px-4 py-2">Hủy</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: LIVE PREVIEW (XEM TRƯỚC TRỰC TIẾP) -->
+        <div class="col-lg-5">
+            <div class="sticky-top" style="top:85px">
+                <div class="admin-card p-3 bg-dark text-white rounded-4 shadow-lg">
+                    <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+                        <span class="small fw-bold text-uppercase tracking-wider text-warning">
+                            <i class="bi bi-eye-fill me-1"></i> Live Preview (Xem trước thời gian thực)
+                        </span>
+                        <span class="badge bg-secondary" id="lblPreviewLayout">@(Model.LayoutType ?? "TopImage")</span>
+                    </div>
+
+                    <div class="p-3 rounded-4 d-flex align-items-center justify-content-center" style="background: rgba(15,23,42,0.85); min-height: 460px;">
+                        <div id="previewPopupBox" class="rounded-4 overflow-hidden shadow-lg w-100 position-relative" style="background:#ffffff; color:#1e293b; transition: all 0.25s ease;">
+                            <button type="button" class="btn position-absolute top-0 end-0 m-2 rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    style="width:30px;height:30px;z-index:10;background:rgba(15,23,42,0.7);color:#fff;border:1px solid #fff;font-size:0.75rem">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+
+                            <div id="previewInnerContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    function selectLayout(type, el) {
+        document.getElementById('inpLayoutType').value = type;
+        document.querySelectorAll('.layout-option').forEach(function (item) {
+            item.classList.remove('border-danger', 'bg-danger-subtle', 'fw-bold');
+            item.classList.add('bg-light');
+        });
+        el.classList.remove('bg-light');
+        el.classList.add('border-danger', 'bg-danger-subtle', 'fw-bold');
+        updatePreview();
+    }
+
+    function syncColor(target, val) {
+        document.getElementById('inp' + target).value = val;
+        document.getElementById('pick' + target).value = val;
+        updatePreview();
+    }
+
+    function applyPreset(bg, text, accent) {
+        syncColor('Bg', bg);
+        syncColor('Text', text);
+        syncColor('Accent', accent);
+    }
+
+    function previewLocalFile(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('inpImgUrl').value = e.target.result;
+                updatePreview();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function updatePreview() {
+        var layout = document.getElementById('inpLayoutType').value || 'TopImage';
+        var badge = document.getElementById('inpBadge').value || 'FLASH SALE HÔM NAY';
+        var title = document.getElementById('inpTitle').value || 'Ưu Đãi Hoa Tươi CHAM Flowers';
+        var sub = document.getElementById('inpSubtitle').value || '';
+        var coupon = document.getElementById('inpCoupon').value || '';
+        var btnText = document.getElementById('inpBtnText').value || 'Xem ngay chương trình khuyến mãi';
+        var imgUrl = document.getElementById('inpImgUrl').value || '/images/samflora/b12-main.jpg';
+        var bg = document.getElementById('inpBg').value || '#ffffff';
+        var text = document.getElementById('inpText').value || '#1e293b';
+        var accent = document.getElementById('inpAccent').value || '#be123c';
+
+        document.getElementById('lblPreviewLayout').textContent = layout;
+        var box = document.getElementById('previewPopupBox');
+        var inner = document.getElementById('previewInnerContent');
+        box.style.backgroundColor = bg;
+        box.style.color = text;
+
+        var couponHtml = coupon
+            ? '<div class="my-2"><span class="badge rounded-pill px-3 py-2 font-monospace" style="background:' + accent + '22;color:' + accent + ';border:1px dashed ' + accent + '">Mã: <strong>' + coupon + '</strong></span></div>'
+            : '';
+
+        if (layout === 'SplitLeft') {
+            inner.innerHTML =
+                '<div class="row g-0 align-items-stretch">' +
+                    '<div class="col-5"><img src="' + imgUrl + '" class="w-100 h-100" style="min-height:290px;object-fit:cover" /></div>' +
+                    '<div class="col-7 p-4 d-flex flex-column justify-content-center text-start">' +
+                        '<span class="badge rounded-pill mb-2 align-self-start" style="background:' + accent + ';color:#fff;font-size:0.68rem">' + badge + '</span>' +
+                        '<h5 class="fw-bold mb-2" style="color:' + accent + ';font-family:Lora,serif">' + title + '</h5>' +
+                        '<p class="small opacity-85 mb-2">' + sub + '</p>' +
+                        couponHtml +
+                        '<button type="button" class="btn rounded-pill w-100 mt-2 py-2 fw-bold text-white" style="background:' + accent + '">' + btnText + '</button>' +
+                    '</div>' +
+                '</div>';
+        } else if (layout === 'PosterOverlay') {
+            inner.innerHTML =
+                '<div class="position-relative" style="min-height:360px;background-image:url(\'' + imgUrl + '\');background-size:cover;background-position:center">' +
+                    '<div class="position-absolute inset-0 d-flex flex-column justify-content-end p-4 text-center text-white" style="inset:0;background:linear-gradient(180deg,rgba(15,23,42,0.15) 0%,rgba(15,23,42,0.92) 85%)">' +
+                        '<span class="badge rounded-pill mx-auto mb-2 px-3 py-1" style="background:' + accent + ';color:#fff">' + badge + '</span>' +
+                        '<h4 class="fw-bold mb-2 text-white" style="font-family:Lora,serif">' + title + '</h4>' +
+                        '<p class="small text-white-50 mb-2">' + sub + '</p>' +
+                        (coupon ? '<div class="mb-3"><span class="badge bg-warning text-dark px-3 py-2 font-monospace">Mã: ' + coupon + '</span></div>' : '') +
+                        '<button type="button" class="btn rounded-pill w-100 py-2 fw-bold text-white shadow" style="background:' + accent + '">' + btnText + '</button>' +
+                    '</div>' +
+                '</div>';
+        } else {
+            inner.innerHTML =
+                '<div>' +
+                    '<img src="' + imgUrl + '" class="w-100" style="height:210px;object-fit:cover" />' +
+                    '<div class="p-4 text-center">' +
+                        '<span class="badge rounded-pill mb-2 px-3 py-1" style="background:' + accent + ';color:#fff;font-size:0.7rem">' + badge + '</span>' +
+                        '<h4 class="fw-bold mb-2" style="color:' + accent + ';font-family:Lora,serif">' + title + '</h4>' +
+                        '<p class="small opacity-85 mb-2">' + sub + '</p>' +
+                        couponHtml +
+                        '<button type="button" class="btn rounded-pill w-100 mt-2 py-2 fw-bold text-white" style="background:' + accent + '">' + btnText + '</button>' +
+                    '</div>' +
+                '</div>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', updatePreview);
+</script>

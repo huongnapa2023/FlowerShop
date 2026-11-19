@@ -1,0 +1,69 @@
+﻿@using FlowerShop.Services
+@{
+    ViewBag.Title = "Cổng thanh toán trực tuyến VNPay Sandbox - CHAM Flowers";
+    var order = ViewBag.Order as FlowerShop.Models.Order;
+    string rawQuery = ViewBag.QueryString as string ?? "";
+}
+
+<div class="container py-5" style="max-width:760px">
+    <div class="bg-white rounded-4 border shadow overflow-hidden">
+        <div class="p-4 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(90deg, #005baa 0%, #0072bc 100%);">
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-shield-lock-fill me-2"></i>VNPAY PAYMENT GATEWAY</h4>
+                <div class="small opacity-75">Cổng thanh toán điện tử bảo mật chuẩn HMAC-SHA512 (Sandbox Test Mode)</div>
+            </div>
+            <span class="badge bg-warning text-dark px-3 py-2">NCB SANDBOX</span>
+        </div>
+
+        <div class="p-4 p-md-5">
+            <div class="row g-4">
+                <div class="col-md-5 border-end">
+                    <div class="text-muted small text-uppercase fw-bold mb-2">Thông tin đơn hàng</div>
+                    <div class="mb-2 small">Đơn vị thụ hưởng: <strong>CHAM FLOWERS</strong></div>
+                    <div class="mb-2 small">Mã tham chiếu: <strong>#@(order != null ? order.Id : 0)</strong></div>
+                    <div class="mb-3 small">Nội dung: <em>Thanh toán đơn hoa tươi #@(order != null ? order.Id : 0)</em></div>
+                    <div class="p-3 rounded-3 bg-primary-subtle text-primary">
+                        <div class="small">Số tiền thanh toán:</div>
+                        <div class="h4 fw-bold mb-0">@AppHelpers.FormatVnd(order != null ? order.Total : 0)</div>
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+                    <h6 class="fw-bold mb-3">Thẻ ATM Nội Địa Test (Ngân hàng NCB)</h6>
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">Số thẻ Test Sandbox</label>
+                        <input type="text" class="form-control form-control-sm bg-light fw-semibold" value="9704198526191432198" readonly />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label small text-muted mb-1">Tên chủ thẻ</label>
+                            <input type="text" class="form-control form-control-sm bg-light" value="NGUYEN VAN A" readonly />
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small text-muted mb-1">Mã OTP Test</label>
+                            <input type="text" class="form-control form-control-sm bg-light" value="123456" readonly />
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <form action="@Url.Action("VnPaySimulateCallback", "Payment")" method="post">
+                            <input type="hidden" name="rawQuery" value="@rawQuery" />
+                            <input type="hidden" name="isSuccess" value="true" />
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill">
+                                <i class="bi bi-check2-circle me-1"></i> Xác nhận Thanh toán Thành công (Mã 00)
+                            </button>
+                        </form>
+
+                        <form action="@Url.Action("VnPaySimulateCallback", "Payment")" method="post">
+                            <input type="hidden" name="rawQuery" value="@rawQuery" />
+                            <input type="hidden" name="isSuccess" value="false" />
+                            <button type="submit" class="btn btn-outline-danger w-100 btn-sm rounded-pill">
+                                Hủy giao dịch / Giả lập lỗi thanh toán (Mã 24)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

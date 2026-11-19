@@ -1,0 +1,68 @@
+﻿@model FlowerShop.Models.User
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = string.Format("Sửa thông tin Khách hàng #{0} - CHAM Flowers Executive CMS", Model.Id);
+}
+
+<div class="admin-card p-4" style="max-width:720px">
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        <div>
+            <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-person-gear text-danger me-2"></i>Cập Nhật Thông Tin Khách Hàng #@Model.Id</h6>
+            <span class="text-muted small">Quản lý hồ sơ hội viên và cấp bậc chi tiêu khách hàng</span>
+        </div>
+        <a href="@Url.Action("Index", "Customer")" class="btn btn-sm btn-light border rounded-pill px-3">Quay lại danh sách</a>
+    </div>
+
+    <form action="@Url.Action("Edit", "Customer", new { id = Model.Id })" method="post">
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger small rounded-3" })
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Họ và tên khách hàng *</label>
+                <input type="text" name="fullName" value="@Model.FullName" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Số điện thoại *</label>
+                <input type="text" name="phone" value="@Model.Phone" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Email đăng nhập (Cố định)</label>
+                <input type="text" value="@Model.Email" class="form-control bg-light" readonly />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Đặt lại mật khẩu mới (Để trống nếu giữ nguyên)</label>
+                <input type="password" name="newPassword" class="form-control" placeholder="Tối thiểu 6 ký tự..." />
+            </div>
+            <div class="col-12">
+                <label class="form-label small fw-bold">Địa chỉ giao nhận mặc định *</label>
+                <input type="text" name="address" value="@Model.Address" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Loại tài khoản</label>
+                <input type="text" class="form-control bg-light text-muted" value="Khách hàng mua hoa (Customer)" readonly />
+            </div>
+            <div class="col-md-6 d-flex align-items-end gap-4 pb-1">
+                <div class="form-check">
+                    <input type="checkbox" name="isVip" value="true" @Html.Raw(Model.IsVip ? "checked=\"checked\"" : "") class="form-check-input" id="chkVip" />
+                    <label for="chkVip" class="form-check-label small fw-semibold text-warning-emphasis">
+                        <i class="bi bi-gem me-1"></i>Hội viên VIP
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="isActive" value="true" @Html.Raw(Model.IsActive ? "checked=\"checked\"" : "") class="form-check-input" id="chkAct" />
+                    <label for="chkAct" class="form-check-label small fw-semibold">
+                        Cho phép hoạt động
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-2 border-top d-flex gap-2">
+            <button type="submit" class="btn btn-danger rounded-pill px-4">
+                <i class="bi bi-floppy me-1"></i>Lưu thông tin khách hàng
+            </button>
+            <a href="@Url.Action("Index", "Customer")" class="btn btn-light border rounded-pill px-4">Hủy</a>
+        </div>
+    </form>
+</div>

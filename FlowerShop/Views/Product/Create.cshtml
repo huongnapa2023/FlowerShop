@@ -1,0 +1,91 @@
+﻿@model FlowerShop.Models.Product
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Thêm Sản phẩm Hoa mới";
+}
+
+<div class="admin-card p-4" style="max-width:880px">
+    <form action="@Url.Action("Create", "Product")" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        @if (!ViewData.ModelState.IsValid)
+        {
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-danger small rounded-3" })
+        }
+
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label small fw-bold">Tên sản phẩm hoa *</label>
+                @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "VD: Bó Hoa Hồng Trà Cụm Nơ Lụa" })
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Danh mục chủ đề *</label>
+                @Html.DropDownListFor(m => m.CategoryId, ViewBag.CategoryList as SelectList, new { @class = "form-select" })
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Chủng loại hoa</label>
+                @Html.DropDownListFor(m => m.FlowerCategoryId, ViewBag.FlowerCategoryList as SelectList, "-- Chọn loại hoa --", new { @class = "form-select" })
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Nhà cung cấp</label>
+                @Html.DropDownListFor(m => m.SupplierId, ViewBag.SupplierList as SelectList, "-- Chọn nhà cung cấp --", new { @class = "form-select" })
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Giá bán hiện tại (VNĐ) *</label>
+                <input type="number" name="Price" value="@((long)Model.Price)" step="1000" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Giá gốc chưa giảm (VNĐ)</label>
+                <input type="number" name="OriginalPrice" value="@(Model.OriginalPrice.HasValue ? ((long)Model.OriginalPrice.Value).ToString() : "")" step="1000" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Số lượng tồn kho *</label>
+                <input type="number" name="StockQuantity" value="@Model.StockQuantity" class="form-control" required />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Tải lên ảnh đại diện chính (.jpg, .png, .gif, .svg)</label>
+                <input type="file" name="mainImageFile" class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.svg" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Hoặc chọn mẫu ảnh có sẵn / URL</label>
+                <input type="text" name="customImageUrl" class="form-control" placeholder="/images/samflora/b10-main.jpg" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Thư viện ảnh phụ (Gallery)</label>
+                <input type="file" name="galleryFiles" multiple class="form-control" accept=".jpg,.jpeg,.png,.gif,.webp,.svg" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Hạn bảo quản lô hoa</label>
+                <input type="date" name="ExpiryDate" value="@(Model.ExpiryDate.HasValue ? Model.ExpiryDate.Value.ToString("yyyy-MM-dd") : "")" class="form-control" />
+            </div>
+
+            <div class="col-12">
+                <label class="form-label small fw-bold">Mô tả chi tiết bó hoa</label>
+                @Html.TextAreaFor(m => m.Description, new { rows = 3, @class = "form-control", placeholder = "Thành phần các loài hoa, giấy gói, kích thước và ý nghĩa..." })
+            </div>
+
+            <div class="col-12 d-flex flex-wrap gap-4 pt-2">
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
+                    <label for="IsFeatured" class="form-check-label small fw-semibold">Sản phẩm nổi bật (Trang chủ)</label>
+                </div>
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsHotDeal, new { @class = "form-check-input" })
+                    <label for="IsHotDeal" class="form-check-label small fw-semibold">Đưa vào chương trình Hot Deal</label>
+                </div>
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                    <label for="IsActive" class="form-check-label small fw-semibold">Đang kinh doanh hiển thị</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-danger rounded-pill px-4"><i class="bi bi-save me-1"></i> Lưu sản phẩm</button>
+            <a href="@Url.Action("AdminIndex", "Product")" class="btn btn-light border rounded-pill px-4">Hủy bỏ</a>
+        </div>
+    </form>
+</div>

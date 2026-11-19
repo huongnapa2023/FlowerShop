@@ -1,0 +1,64 @@
+﻿@model FlowerShop.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập hệ thống";
+}
+
+<div class="container py-5" style="max-width:500px">
+    <div class="bg-white p-4 p-md-5 rounded-4 border shadow-sm">
+        <div class="text-center mb-4">
+            <img src="~/images/logo-cham-icon.svg" style="width:68px;height:68px" class="mb-2 shadow-sm rounded-circle" alt="CHAM Flowers" />
+            <h2 class="h3 fw-bold mb-1">Đăng Nhập CHAM Flowers</h2>
+            <p class="text-muted small">Đăng nhập để đặt hoa nhanh, lưu địa chỉ và tích điểm VIP</p>
+        </div>
+
+        <form action="@Url.Action("Login", "Account")" method="post" id="loginForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+            @if (!ViewData.ModelState.IsValid)
+            {
+                @Html.ValidationSummary(true, "", new { @class = "alert alert-danger small rounded-3 py-2" })
+            }
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Email đăng nhập</label>
+                <input type="email" name="Email" id="loginEmail" value="@Model.Email" class="form-control rounded-3" placeholder="example@chamflowers.vn" required />
+                @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <label class="form-label fw-semibold small">Mật khẩu</label>
+                    <a href="@Url.Action("ForgotPassword", "Account")" class="small text-danger text-decoration-none">Quên mật khẩu?</a>
+                </div>
+                <input type="password" name="Password" id="loginPassword" class="form-control rounded-3" placeholder="••••••••" required />
+                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="form-check mb-4">
+                <input type="checkbox" name="RememberMe" id="RememberMe" value="true" class="form-check-input" @Html.Raw(Model.RememberMe ? "checked=\"checked\"" : "") />
+                <input type="hidden" name="RememberMe" value="false" />
+                <label for="RememberMe" class="form-check-label small">Ghi nhớ phiên đăng nhập</label>
+            </div>
+
+            <button type="submit" class="btn btn-nt-primary w-100 py-2 mb-3">Đăng nhập ngay</button>
+        </form>
+
+        <div class="p-3 rounded-4 bg-light border mb-3">
+            <div class="small fw-bold text-secondary mb-2"><i class="bi bi-lightning-charge-fill text-warning"></i> Đăng nhập nhanh tài khoản mẫu:</div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-dark rounded-pill flex-grow-1"
+                        onclick="document.getElementById('loginEmail').value='admin@chamflowers.vn'; document.getElementById('loginPassword').value='Admin@123'; document.getElementById('loginForm').submit();">
+                    Admin Chủ Shop
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill flex-grow-1"
+                        onclick="document.getElementById('loginEmail').value='khachvip@chamflowers.vn'; document.getElementById('loginPassword').value='Khach@123'; document.getElementById('loginForm').submit();">
+                    Khách hàng VIP
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center small text-muted">
+            Chưa có tài khoản? <a href="@Url.Action("Register", "Account")" class="text-danger fw-bold text-decoration-none">Đăng ký thành viên mới</a>
+        </div>
+    </div>
+</div>

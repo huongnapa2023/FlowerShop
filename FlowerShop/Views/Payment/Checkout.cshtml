@@ -1,0 +1,143 @@
+﻿@model FlowerShop.Models.CheckoutViewModel
+@using FlowerShop.Services
+@{
+    ViewBag.Title = "Thanh toán đơn hàng - CHAM Flowers";
+}
+
+<div class="container py-4">
+    <h1 class="h3 fw-bold mb-4"><i class="bi bi-credit-card-2-front-fill text-danger me-2"></i>Xác Nhận Đặt Hoa & Thanh Toán</h1>
+
+    <form action="@Url.Action("ProcessPayment", "Payment")" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="CouponCode" value="@Model.CouponCode" />
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger rounded-4 small" })
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <!-- Bước 1: Thông tin người nhận -->
+                <div class="bg-white p-4 rounded-4 border shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3">1. Thông Tin Người Nhận Hoa</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Họ và tên người nhận *</label>
+                            <input type="text" name="RecipientName" value="@Model.RecipientName" class="form-control" placeholder="Nhập họ tên người nhận" required />
+                            @Html.ValidationMessageFor(m => m.RecipientName, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Số điện thoại liên hệ *</label>
+                            <input type="text" name="RecipientPhone" value="@Model.RecipientPhone" class="form-control" placeholder="VD: 0912345678" required />
+                            @Html.ValidationMessageFor(m => m.RecipientPhone, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Địa chỉ giao hoa chi tiết *</label>
+                            <input type="text" name="DeliveryAddress" value="@Model.DeliveryAddress" class="form-control" placeholder="Số nhà, đường, phường/xã, quận/huyện..." required />
+                            @Html.ValidationMessageFor(m => m.DeliveryAddress, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Thời gian giao hoa mong muốn *</label>
+                            <input type="datetime-local" name="DeliveryDate" value="@Model.DeliveryDate.ToString("yyyy-MM-ddTHH:mm")" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Đơn vị vận chuyển *</label>
+                            <select name="ShippingCarrier" class="form-select" id="carrierSelect" onchange="updateShipDisplay()">
+                                <option value="Giao Hoa Hỏa Tốc 2H (CHAM Express)" data-fee="30000" @Html.Raw(Model.ShippingCarrier == "Giao Hoa Hỏa Tốc 2H (CHAM Express)" ? "selected=\"selected\"" : "")>Giao Hoa Hỏa Tốc 2H (30.000 ₫)</option>
+                                <option value="Giao Tiêu Chuẩn Trong Ngày" data-fee="20000" @Html.Raw(Model.ShippingCarrier == "Giao Tiêu Chuẩn Trong Ngày" ? "selected=\"selected\"" : "")>Giao Tiêu Chuẩn Trong Ngày (20.000 ₫)</option>
+                                <option value="Nhận Trực Tiếp Tại Cửa Hàng CHAM Flowers" data-fee="0" @Html.Raw(Model.ShippingCarrier == "Nhận Trực Tiếp Tại Cửa Hàng CHAM Flowers" ? "selected=\"selected\"" : "")>Nhận Trực Tiếp Tại Cửa Hàng (Miễn phí)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Nội dung thiệp chúc mừng / Ghi chú giao hàng</label>
+                            <textarea name="Note" rows="2" class="form-control" placeholder="VD: Chúc mừng sinh nhật em yêu! Giao giúp mình trước 15h chiều...">@Model.Note</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bước 2: Phương thức thanh toán (COD & VNPay) -->
+                <div class="bg-white p-4 rounded-4 border shadow-sm">
+                    <h5 class="fw-bold mb-3">2. Chọn Hình Thức Thanh Toán</h5>
+                    <div class="d-grid gap-3">
+                        <label class="p-3 rounded-4 border d-flex align-items-center gap-3" style="cursor:pointer">
+                            <input type="radio" name="PaymentMethod" value="COD" class="form-check-input mt-0" @Html.Raw(Model.PaymentMethod == "VNPay" ? "" : "checked=\"checked\"") />
+                            <span class="fs-3 text-success"><i class="bi bi-cash-coin"></i></span>
+                            <div>
+                                <div class="fw-bold">Thanh toán tiền mặt khi nhận hoa (COD)</div>
+                                <div class="text-muted small">Kiểm tra mẫu hoa tươi thực tế khi nhận rồi mới thanh toán.</div>
+                            </div>
+                        </label>
+
+                        <label class="p-3 rounded-4 border d-flex align-items-center gap-3" style="cursor:pointer">
+                            <input type="radio" name="PaymentMethod" value="VNPay" class="form-check-input mt-0" @Html.Raw(Model.PaymentMethod == "VNPay" ? "checked=\"checked\"" : "") />
+                            <span class="fs-3 text-primary"><i class="bi bi-qr-code-scan"></i></span>
+                            <div>
+                                <div class="fw-bold">Thanh toán trực tuyến qua cổng VNPay <span class="badge bg-primary ms-1">Khuyên dùng</span></div>
+                                <div class="text-muted small">Hỗ trợ Thẻ ATM nội địa (NCB, Vietcombank...), VNPay QR, Thẻ quốc tế bảo mật HMAC-SHA512.</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kiểm tra giỏ hàng lần cuối -->
+            <div class="col-lg-5">
+                <div class="bg-white p-4 rounded-4 border shadow-sm sticky-top" style="top:88px">
+                    <h5 class="fw-bold mb-3">Đơn Hàng Của Bạn (@Model.Items.Sum(i => i.Quantity) sản phẩm)</h5>
+                    <div class="d-grid gap-3 mb-3">
+                        @foreach (var ci in Model.Items)
+                        {
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="@(ci.Product != null && !string.IsNullOrEmpty(ci.Product.MainImageUrl) ? ci.Product.MainImageUrl : "/images/samflora/b10-main.jpg")"
+                                         class="rounded-3 border" style="width:50px;height:50px;object-fit:cover" alt="" />
+                                    <div class="small">
+                                        <div class="fw-semibold">@(ci.Product != null ? ci.Product.Name : "Sản phẩm")</div>
+                                        <div class="text-muted">SL: @ci.Quantity</div>
+                                    </div>
+                                </div>
+                                <div class="fw-semibold small">@AppHelpers.FormatVnd(ci.UnitPrice * ci.Quantity)</div>
+                            </div>
+                        }
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-muted">Tạm tính:</span>
+                        <span>@AppHelpers.FormatVnd(Model.SubTotal)</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-muted">Phí vận chuyển:</span>
+                        <span id="shipFeeText">@AppHelpers.FormatVnd(Model.ShippingFee)</span>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="d-flex justify-content-between small mb-2 text-success">
+                            <span>Mã giảm giá (@Model.CouponCode):</span>
+                            <span>-@AppHelpers.FormatVnd(Model.DiscountAmount)</span>
+                        </div>
+                    }
+                    <hr />
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold">Tổng thanh toán:</span>
+                        <span id="grandTotalText" class="h4 fw-bold text-danger mb-0">@AppHelpers.FormatVnd(Model.GrandTotal)</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-nt-primary w-100 py-2 fs-6">
+                        <i class="bi bi-lock-fill me-1"></i> Xác nhận Đặt hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        var baseSub = @((long)Model.SubTotal);
+        var baseDisc = @((long)Model.DiscountAmount);
+        function updateShipDisplay() {
+            var sel = document.getElementById('carrierSelect');
+            var fee = parseInt(sel.options[sel.selectedIndex].getAttribute('data-fee') || '30000');
+            var total = Math.max(0, baseSub + fee - baseDisc);
+            document.getElementById('shipFeeText').textContent = fee.toLocaleString('vi-VN') + ' ₫';
+            document.getElementById('grandTotalText').textContent = total.toLocaleString('vi-VN') + ' ₫';
+        }
+    </script>
+}

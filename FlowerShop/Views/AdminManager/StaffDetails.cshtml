@@ -1,0 +1,383 @@
+@model FlowerShop.Models.User
+@using FlowerShop.Models
+@using FlowerShop.Services
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Chi tiết Hồ sơ Nhân sự: " + Model.FullName;
+    
+    var allPermissions = ViewBag.AllPermissions as List<string> ?? AdminPermissions.GetAll();
+    var descriptions = ViewBag.PermissionDescriptions as Dictionary<string, string> ?? AdminPermissions.Descriptions;
+    var badges = ViewBag.PermissionBadges as Dictionary<string, string> ?? AdminPermissions.Badges;
+
+    var allowedSet = new HashSet<string>(
+        !string.IsNullOrWhiteSpace(Model.AllowedPermissions)
+            ? Model.AllowedPermissions.Split(new[] { ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim().ToUpperInvariant())
+            : Enumerable.Empty<string>(),
+        StringComparer.OrdinalIgnoreCase);
+
+    int grantedModulesCount = Model.IsSuperAdmin ? allPermissions.Count : allPermissions.Count(p => allowedSet.Contains(p));
+    string empCode = string.Format("EMP-{0:D4}", Model.Id);
+}
+
+<div class="container-fluid px-0">
+    <!-- Breadcrumb & Top Bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Report")" class="text-decoration-none text-muted">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "AdminManager")" class="text-decoration-none text-muted">Phân quyền Admin con</a></li>
+                    <li class="breadcrumb-item active text-danger fw-bold" aria-current="page">Hồ sơ Nhân sự</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <span>Hồ Sơ Chi Tiết Nhân Viên:</span>
+                <span class="text-danger">@Model.FullName</span>
+                @if (Model.IsSuperAdmin)
+                {
+                    <span class="badge bg-danger rounded-pill fs-6"><i class="bi bi-shield-fill-check me-1"></i>Admin Tổng</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill fs-6"><i class="bi bi-person-badge me-1"></i>Nhân sự Cơ sở</span>
+                }
+            </h4>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("Index", "AdminManager")" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+            @if (!Model.IsSuperAdmin)
+            {
+                <a href="@Url.Action("Index", "AdminManager")" class="btn btn-nt-primary rounded-pill px-3 shadow-sm btn-sm">
+                    <i class="bi bi-sliders me-1"></i>Chỉnh sửa Ma trận Quyền
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Alert thông báo -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-check-circle-fill fs-5 text-success me-2"></i>
+            <div>@TempData["Success"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger me-2"></i>
+            <div>@TempData["Error"]</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Cột Trái: Thẻ Định Danh Nhân Viên & Thông Tin Cơ Bản -->
+        <div class="col-lg-4">
+            <!-- Thẻ Dossier Nhân Sự -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="p-4 text-center text-white" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+                    <div class="position-relative d-inline-block mb-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-lg mx-auto"
+                             style="width:96px;height:96px;background:@(Model.IsSuperAdmin ? "linear-gradient(135deg, #881337, #be123c)" : "linear-gradient(135deg, #0284c7, #0369a1)");font-size:2.2rem;border:4px solid rgba(255,255,255,0.25)">
+                            @AppHelpers.GetInitials(Model.FullName)
+                        </div>
+                        <span class="position-absolute bottom-0 end-0 p-2 @(Model.IsActive ? "bg-success" : "bg-danger") border border-2 border-white rounded-circle" title="@(Model.IsActive ? "Đang hoạt động" : "Đang khóa")"></span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1 text-white">@Model.FullName</h5>
+                    <div class="text-light-emphasis small mb-2">@Model.Email</div>
+
+                    <div class="d-flex flex-wrap justify-content-center gap-1">
+                        <span class="badge bg-white text-dark rounded-pill px-3 py-1 fw-bold">
+                            <i class="bi bi-hash text-danger"></i>@empCode
+                        </span>
+                        <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger") rounded-pill px-3 py-1">
+                            @(Model.IsActive ? "Đang công tác" : "Tài khoản bị khóa")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="text-muted small fw-semibold">Cơ sở / Chi nhánh:</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill fw-bold">
+                            <i class="bi bi-geo-alt-fill me-1"></i>@(string.IsNullOrWhiteSpace(Model.Address) ? "Trụ sở Tổng Hà Nội" : Model.Address)
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="text-muted small fw-semibold">Số điện thoại:</span>
+                        <span class="fw-bold text-dark">
+                            <i class="bi bi-telephone-fill text-success me-1"></i>@(string.IsNullOrWhiteSpace(Model.Phone) ? "Chưa cập nhật" : Model.Phone)
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="text-muted small fw-semibold">Vai trò hệ thống:</span>
+                        <span class="fw-bold text-dark">
+                            @(Model.IsSuperAdmin ? "Tổng Quản trị viên (Super Admin)" : "Quản trị viên Chi nhánh")
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="text-muted small fw-semibold">Ngày tạo tài khoản:</span>
+                        <span class="text-dark small">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="text-muted small fw-semibold">Cập nhật quyền gần nhất:</span>
+                        <span class="text-dark small">@(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "Khởi tạo ban đầu")</span>
+                    </div>
+
+                    <!-- Nút Mở Modal Sửa Thông Tin -->
+                    <div class="d-grid gap-2 pt-2">
+                        <button type="button" class="btn btn-outline-dark rounded-pill py-2 btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditStaff">
+                            <i class="bi bi-pencil-square me-1"></i>Sửa thông tin nhân sự
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khối Thao Tác Quản Trị Nhân Sự Nhanh -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-shield-lock-fill text-danger me-2"></i>Thao Tác Bảo Mật & Quản Trị</h6>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary rounded-pill py-2 btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalResetPassword">
+                            <i class="bi bi-key-fill me-1"></i>Đặt lại mật khẩu nhân viên
+                        </button>
+
+                        @if (!Model.IsSuperAdmin)
+                        {
+                            using (Html.BeginForm("ToggleActive", "AdminManager", FormMethod.Post, new { onsubmit = "return confirm('Xác nhận thay đổi trạng thái hoạt động của nhân viên này?');" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@Model.Id" />
+                                <input type="hidden" name="returnUrl" value="@Url.Action("StaffDetails", "AdminManager", new { id = Model.Id })" />
+                                <button type="submit" class="btn @(Model.IsActive ? "btn-outline-danger" : "btn-outline-success") rounded-pill py-2 btn-sm fw-semibold w-100">
+                                    <i class="bi @(Model.IsActive ? "bi-lock-fill" : "bi-unlock-fill") me-1"></i>
+                                    @(Model.IsActive ? "Tạm khóa tài khoản nhân viên" : "Mở khóa cho nhân viên làm việc")
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Bảng Chi Tiết Phân Quyền & Thẩm Quyền Nghiệp Vụ -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-diagram-3-fill text-danger me-2"></i>Ma Trận Thẩm Quyền & Phân Quyền Nghiệp Vụ</h5>
+                        <span class="text-muted small">Chi tiết các phân hệ được phép truy cập và cấp độ quyền thao tác (Xem • Thêm • Sửa • Xoá)</span>
+                    </div>
+                    <div>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill small fw-bold">
+                            Được cấp: @grantedModulesCount / @allPermissions.Count Phân hệ
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 bg-white">
+                    @if (Model.IsSuperAdmin)
+                    {
+                        <div class="alert alert-warning border-0 rounded-4 d-flex align-items-center gap-3 p-3 mb-4">
+                            <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px">
+                                <i class="bi bi-star-fill fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">Tài khoản Quản trị viên Tối cao (Super Administrator)</div>
+                                <div class="small text-muted">Tài khoản này nắm giữ toàn quyền quản trị tối cao trên mọi phân hệ của toàn chuỗi CHAM Flowers (Hà Nội, Bắc Ninh, TP.HCM, Đà Nẵng, Hải Phòng, Quảng Ninh...).</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info border-0 rounded-4 d-flex align-items-center gap-3 p-3 mb-4">
+                            <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px">
+                                <i class="bi bi-info-circle-fill fs-5"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">Phân quyền động theo Cơ sở (Dynamic Granular RBAC)</div>
+                                <div class="small text-muted">Tài khoản này chịu sự phân quyền chặt chẽ của Admin Tổng. Các quyền thao tác <strong>Thêm • Sửa • Xoá</strong> được áp dụng tức thì trong toàn bộ hệ thống.</div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th class="ps-3" style="width:45%">Phân Hệ Nghiệp Vụ</th>
+                                    <th class="text-center" style="width:20%">Quyền Xem Phân Hệ</th>
+                                    <th class="text-center" style="width:35%">Cấp Độ Hành Động (CRUD)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var perm in allPermissions)
+                                {
+                                    bool isMainChecked = Model.IsSuperAdmin || allowedSet.Contains(perm);
+                                    bool hasCrud = AdminPermissions.SupportsCrud(perm);
+                                    string icon = badges.ContainsKey(perm) ? badges[perm] : "bi-check";
+                                    string desc = descriptions.ContainsKey(perm) ? descriptions[perm] : perm;
+
+                                    bool canCreate = Model.IsSuperAdmin || allowedSet.Contains(AdminPermissions.CreateOf(perm));
+                                    bool canEdit = Model.IsSuperAdmin || allowedSet.Contains(AdminPermissions.EditOf(perm));
+                                    bool canDelete = Model.IsSuperAdmin || allowedSet.Contains(AdminPermissions.DeleteOf(perm));
+
+                                    <tr class="@(isMainChecked ? "" : "table-light opacity-75")">
+                                        <td class="ps-3 py-3">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 @(isMainChecked ? "bg-danger-subtle text-danger" : "bg-secondary-subtle text-secondary")" style="width:36px;height:36px">
+                                                    <i class="bi @icon fs-6"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark">@desc</div>
+                                                    <span class="badge bg-light text-muted border" style="font-size:0.68rem">Mã: @perm</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (isMainChecked)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Được cấp quyền
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1 rounded-pill small">
+                                                    <i class="bi bi-lock-fill me-1"></i>Không có quyền
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (!isMainChecked)
+                                            {
+                                                <span class="text-muted small fst-italic">Bị khóa hoàn toàn</span>
+                                            }
+                                            else if (!hasCrud)
+                                            {
+                                                <span class="badge bg-light text-dark border px-3 py-1 rounded-pill small">
+                                                    <i class="bi bi-check-all text-primary me-1"></i>Toàn quyền xem phân hệ
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <div class="d-flex justify-content-center gap-1">
+                                                    <span class="badge @(canCreate ? "bg-success text-white" : "bg-light text-muted border") px-2 py-1 rounded-pill" style="font-size:0.75rem" title="@(canCreate ? "Được phép Thêm mới" : "Bị cấm Thêm mới")">
+                                                        <i class="bi @(canCreate ? "bi-check-lg" : "bi-x-lg") me-1"></i>+Thêm
+                                                    </span>
+                                                    <span class="badge @(canEdit ? "bg-primary text-white" : "bg-light text-muted border") px-2 py-1 rounded-pill" style="font-size:0.75rem" title="@(canEdit ? "Được phép Sửa" : "Bị cấm Sửa")">
+                                                        <i class="bi @(canEdit ? "bi-pencil-fill" : "bi-x-lg") me-1"></i>✎Sửa
+                                                    </span>
+                                                    <span class="badge @(canDelete ? "bg-danger text-white" : "bg-light text-muted border text-decoration-line-through") px-2 py-1 rounded-pill" style="font-size:0.75rem" title="@(canDelete ? "Được phép Xóa" : "BỊ CẤM XÓA (Giới hạn bảo vệ dữ liệu cơ sở)")">
+                                                        <i class="bi @(canDelete ? "bi-trash-fill" : "bi-shield-slash") me-1"></i>🗑Xoá
+                                                    </span>
+                                                </div>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa Thông Tin Nhân Sự -->
+<div class="modal fade" id="modalEditStaff" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white py-3 px-4">
+                <h6 class="modal-title fw-bold"><i class="bi bi-person-gear me-2 text-danger"></i>Chỉnh Sửa Hồ Sơ Nhân Viên</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            @using (Html.BeginForm("UpdateStaffInfo", "AdminManager", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" value="@Model.Id" />
+                <div class="modal-body p-4 bg-white">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Email công vụ (Không thể đổi)</label>
+                        <input type="text" class="form-control bg-light" value="@Model.Email" readonly disabled />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Họ và tên nhân viên (*)</label>
+                        <input type="text" name="fullName" class="form-control" value="@Model.FullName" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Số điện thoại liên hệ (*)</label>
+                        <input type="text" name="phone" class="form-control" value="@Model.Phone" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Cơ sở / Chi nhánh làm việc (*)</label>
+                        <input type="text" name="address" class="form-control" value="@Model.Address" list="branchOptions" required />
+                        <datalist id="branchOptions">
+                            <option value="Cơ sở Hà Nội"></option>
+                            <option value="Cơ sở Bắc Ninh"></option>
+                            <option value="Cơ sở Hải Phòng"></option>
+                            <option value="Cơ sở Đà Nẵng"></option>
+                            <option value="Cơ sở Quảng Ninh"></option>
+                            <option value="Cơ sở TP.HCM"></option>
+                        </datalist>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 border-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-sm btn-nt-primary rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-floppy-fill me-1"></i>Lưu thông tin
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đặt Lại Mật Khẩu -->
+<div class="modal fade" id="modalResetPassword" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-gradient text-white py-3 px-4" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                <h6 class="modal-title fw-bold"><i class="bi bi-key-fill text-warning me-2"></i>Đặt Lại Mật Khẩu Nhân Viên</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            @using (Html.BeginForm("ResetPassword", "AdminManager", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" value="@Model.Id" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("StaffDetails", "AdminManager", new { id = Model.Id })" />
+                <div class="modal-body p-4 bg-white">
+                    <p class="small text-muted mb-3">
+                        Bạn đang đặt lại mật khẩu cho nhân sự <strong>@Model.FullName</strong> (<span class="text-danger">@Model.Email</span>).
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Mật khẩu mới (*)</label>
+                        <input type="password" name="newPassword" class="form-control" placeholder="Tối thiểu 6 ký tự" required minlength="6" />
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 border-0">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-shield-check me-1"></i>Xác nhận đổi mật khẩu
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 140">
+  <defs>
+    <linearGradient id="brandCrimson" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#881337"/>
+      <stop offset="55%" stop-color="#be123c"/>
+      <stop offset="100%" stop-color="#9f1239"/>
+    </linearGradient>
+    <linearGradient id="brandGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="petalLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff1f2"/>
+      <stop offset="100%" stop-color="#fecdd3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left Circular Botanical Peony Crest -->
+  <g transform="translate(8,8) scale(0.62)">
+    <circle cx="100" cy="100" r="93" fill="#fffafb" stroke="url(#brandCrimson)" stroke-width="6"/>
+    <circle cx="100" cy="100" r="83" fill="none" stroke="url(#brandGold)" stroke-width="1.8" stroke-dasharray="3 2" opacity="0.7"/>
+    <path d="M144 63 C133 48, 115 42, 97 44 C68 47, 50 70, 50 100 C50 131, 69 154, 99 156 C118 157, 135 149, 146 134 L141 130 C131 142, 117 148, 102 147 C78 146, 64 126, 64 100 C64 73, 79 53, 101 52 C117 51, 130 57, 139 69 Z" fill="url(#brandCrimson)"/>
+    <polygon points="145,53 147,70 138,67" fill="#881337"/>
+    <g stroke="#881337" stroke-width="1.8" fill="#ffe4e6">
+      <path d="M76 74 C68 58, 78 46, 90 54 C84 62, 80 68, 76 74 Z"/>
+      <path d="M84 126 C94 138, 110 140, 115 129 C104 125, 94 124, 84 126 Z"/>
+      <path d="M68 128 C64 142, 72 153, 82 146 C77 139, 73 134, 68 128 Z"/>
+    </g>
+    <g transform="translate(64,102)" stroke="#881337" stroke-width="2" stroke-linejoin="round">
+      <path d="M-24 -6 C-34 -20, -20 -36, -4 -28 C-8 -18, -15 -10, -24 -6 Z" fill="url(#petalLight)"/>
+      <path d="M-6 -28 C4 -40, 24 -34, 20 -16 C12 -20, 2 -24, -6 -28 Z" fill="#fff1f2"/>
+      <path d="M18 -16 C34 -14, 36 8, 18 14 C16 4, 16 -6, 18 -16 Z" fill="url(#petalLight)"/>
+      <path d="M16 14 C22 30, 2 38, -10 26 C-2 22, 8 18, 16 14 Z" fill="#fff1f2"/>
+      <path d="M-10 26 C-26 34, -36 16, -24 2 C-18 10, -14 18, -10 26 Z" fill="url(#petalLight)"/>
+      <path d="M-16 -4 C-18 -18, -2 -24, 8 -16 C18 -18, 22 -2, 12 8 C16 18, 0 24, -10 14 C-22 14, -22 2, -16 -4 Z" fill="#fffafb"/>
+      <path d="M-10 -3 C-10 -12, 2 -16, 9 -8 C14 -2, 8 10, -2 10 C-11 10, -14 2, -10 -3 Z" fill="#fecdd3"/>
+      <circle cx="0" cy="-1" r="6" fill="url(#brandGold)" stroke="#881337" stroke-width="1.4"/>
+    </g>
+  </g>
+
+  <!-- Right Boutique Typography: CHAM Flowers + Twin Botanical Leaves + Tagline -->
+  <g transform="translate(148, 0)">
+    <!-- Twin Botanical Leaves Sprouting Above 'Flo' (Inspired by Sam Flora Logo) -->
+    <g transform="translate(242, 18)" fill="url(#brandCrimson)">
+      <path d="M0 18 C-9 8, -7 -4, 2 -10 C9 -2, 7 10, 0 18 Z"/>
+      <path d="M2 18 C10 7, 22 4, 29 9 C22 17, 11 20, 2 18 Z"/>
+      <path d="M-14 21 C-3 15, 8 16, 16 22 C6 19, -5 19, -14 21 Z" opacity="0.85"/>
+    </g>
+
+    <!-- Main Serif Wordmark -->
+    <text x="0" y="82"
+          font-family="'Lora', 'Times New Roman', serif"
+          font-size="58"
+          font-weight="700"
+          letter-spacing="0.5"
+          fill="url(#brandCrimson)">CHAM Flowers</text>
+
+    <!-- Graceful Botanical Swash Under 'Flowers' -->
+    <path d="M285 91 C325 89, 365 98, 405 93 C418 91, 428 87, 434 83"
+          fill="none" stroke="url(#brandCrimson)" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Subtitle: • FLOWERS FOR YOU • -->
+    <circle cx="62" cy="116" r="3" fill="#be123c"/>
+    <text x="218" y="121"
+          text-anchor="middle"
+          font-family="'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif"
+          font-size="14.5"
+          font-weight="700"
+          letter-spacing="6.5"
+          fill="#881337">FLOWERS FOR YOU</text>
+    <circle cx="374" cy="116" r="3" fill="#be123c"/>
+  </g>
+</svg>

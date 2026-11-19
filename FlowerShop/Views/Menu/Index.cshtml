@@ -1,0 +1,192 @@
+@model List<FlowerShop.Models.MenuItem>
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Quản lý Menu Điều Hướng Website - CHAM Flowers CMS";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-menu-button-wide text-danger me-2"></i>Quản Lý Menu Điều Hướng</h4>
+        <p class="text-muted small mb-0">Tự do thêm trang mới, gán liên kết (Trang chủ, Giỏ hàng, Sản phẩm...), sắp xếp thứ tự và bật/tắt hiển thị trên website.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("Index", "Home")" target="_blank" class="btn btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-eye me-1"></i> Xem Website Thực Tế
+        </a>
+        <a href="@Url.Action("Create", "Menu")" class="btn btn-danger rounded-pill px-4">
+            <i class="bi bi-plus-lg me-1"></i> + Thêm Mục Menu Mới
+        </a>
+    </div>
+</div>
+
+<!-- Khung Xem trước Thanh Menu Thực tế -->
+<div class="admin-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold mb-0 text-muted" style="font-size:0.85rem">
+            <i class="bi bi-display me-2 text-primary"></i>XEM TRƯỚC THANH MENU ĐANG HOẠT ĐỘNG TRÊN WEBSITE:
+        </h6>
+        <span class="badge bg-light text-dark border">Cập nhật tự động theo CSDL</span>
+    </div>
+    <div class="p-3 rounded-3 border bg-white d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold text-danger me-3"><i class="bi bi-flower1"></i> CHAM Flowers</span>
+        @if (Model != null && Model.Any(m => m.IsActive))
+        {
+            foreach (var item in Model.Where(m => m.IsActive).OrderBy(m => m.DisplayOrder))
+            {
+                <a href="@item.Url" target="@(item.OpenNewTab ? "_blank" : "_self")" class="btn btn-sm btn-light border rounded-pill px-3 text-dark text-decoration-none d-inline-flex align-items-center gap-1">
+                    @if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <i class="bi @item.Icon text-muted"></i>
+                    }
+                    <span class="fw-semibold">@item.Name</span>
+                    @if (!string.IsNullOrEmpty(item.BadgeText))
+                    {
+                        <span class="badge bg-@(string.IsNullOrEmpty(item.BadgeColor) ? "danger" : item.BadgeColor) rounded-pill ms-1" style="font-size:0.62rem">@item.BadgeText</span>
+                    }
+                </a>
+            }
+        }
+        else
+        {
+            <span class="text-muted small fst-italic">Chưa có mục menu nào đang kích hoạt.</span>
+        }
+    </div>
+</div>
+
+<!-- Danh sách các Mục Menu -->
+<div class="admin-card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-list-nested me-2 text-danger"></i>Danh Sách Mục Menu (@Model.Count mục)</h6>
+        <span class="text-muted small">Mẹo: Bấm mũi tên ▲ ▼ để đổi thứ tự xuất hiện trên website.</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-muted">
+                <tr>
+                    <th style="width: 110px;">Thứ tự</th>
+                    <th>Tên hiển thị & Biểu tượng</th>
+                    <th>Đường dẫn liên kết (URL)</th>
+                    <th style="width: 120px;">Mở tab mới</th>
+                    <th style="width: 130px;">Trạng thái</th>
+                    <th style="width: 180px;" class="text-end">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                            Chưa có mục menu nào trong hệ thống.
+                            <div class="mt-2">
+                                <a href="@Url.Action("Create", "Menu")" class="btn btn-sm btn-danger rounded-pill px-3">+ Thêm mục menu đầu tiên</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    for (int i = 0; i < Model.Count; i++)
+                    {
+                        var m = Model[i];
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="badge bg-dark rounded-pill" style="min-width:28px">@m.DisplayOrder</span>
+                                    <div class="btn-group-vertical btn-group-sm">
+                                        @if (i > 0)
+                                        {
+                                            <form action="@Url.Action("Move", "Menu")" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@m.Id" />
+                                                <input type="hidden" name="direction" value="up" />
+                                                <button type="submit" class="btn btn-outline-secondary p-0 px-1" title="Đưa lên trên" style="font-size:0.65rem;line-height:1">▲</button>
+                                            </form>
+                                        }
+                                        @if (i < Model.Count - 1)
+                                        {
+                                            <form action="@Url.Action("Move", "Menu")" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@m.Id" />
+                                                <input type="hidden" name="direction" value="down" />
+                                                <button type="submit" class="btn btn-outline-secondary p-0 px-1" title="Đưa xuống dưới" style="font-size:0.65rem;line-height:1">▼</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (!string.IsNullOrEmpty(m.Icon))
+                                    {
+                                        <span class="badge bg-light text-primary border p-2 rounded-3 fs-6">
+                                            <i class="bi @m.Icon"></i>
+                                        </span>
+                                    }
+                                    <div>
+                                        <div class="fw-bold">@m.Name</div>
+                                        @if (!string.IsNullOrEmpty(m.BadgeText))
+                                        {
+                                            <span class="badge bg-@(string.IsNullOrEmpty(m.BadgeColor) ? "danger" : m.BadgeColor) rounded-pill" style="font-size:0.65rem">
+                                                @m.BadgeText
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <code class="text-primary bg-light px-2 py-1 rounded">@m.Url</code>
+                                    <a href="@m.Url" target="_blank" class="text-muted" title="Mở thử đường dẫn này">
+                                        <i class="bi bi-box-arrow-up-right" style="font-size:0.8rem"></i>
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                @if (m.OpenNewTab)
+                                {
+                                    <span class="badge bg-info-subtle text-info border border-info rounded-pill">Tab mới (_blank)</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Cùng tab</span>
+                                }
+                            </td>
+                            <td>
+                                <form action="@Url.Action("ToggleActive", "Menu")" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@m.Id" />
+                                    @if (m.IsActive)
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 py-1" title="Bấm để ẩn menu này khỏi website">
+                                            <i class="bi bi-check-circle me-1"></i> Đang hiện
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" title="Bấm để hiển thị lại menu này">
+                                            <i class="bi bi-eye-slash me-1"></i> Đang ẩn
+                                        </button>
+                                    }
+                                </form>
+                            </td>
+                            <td class="text-end">
+                                <a href="@Url.Action("Edit", "Menu", new { id = m.Id })" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1">
+                                    <i class="bi bi-pencil-square me-1"></i> Sửa
+                                </a>
+                                <form action="@Url.Action("Delete", "Menu")" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa mục menu &quot;@m.Name&quot;?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@m.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Xóa menu">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

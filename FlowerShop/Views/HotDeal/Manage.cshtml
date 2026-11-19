@@ -1,0 +1,171 @@
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Quản lý Chương trình Hot Deal & Popup Khuyến mãi";
+    var popups = ViewBag.Popups as List<FlowerShop.Models.HotDealPopup> ?? new List<FlowerShop.Models.HotDealPopup>();
+    var hotProducts = ViewBag.HotDealProducts as List<FlowerShop.Models.Product> ?? new List<FlowerShop.Models.Product>();
+    var allProducts = ViewBag.AllProducts as List<FlowerShop.Models.Product> ?? new List<FlowerShop.Models.Product>();
+}
+
+<div class="row g-4">
+    <!-- 1. Quản lý HotDealPopup -->
+    <div class="col-12">
+        <div class="admin-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-window-stack text-danger me-2"></i>Danh Sách Chiến Dịch Hot Deal & Popup Builder</h6>
+                    <div class="text-muted small">Thiết kế bố cục, màu sắc, nút CTA, độ trễ hiển thị và tự động chạy theo <code>IsActiveNow</code></div>
+                </div>
+                <a href="@Url.Action("CreateHotDealPopup", "HotDeal")" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-magic me-1"></i> + Thiết kế Popup mới (Popup Builder)
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light small text-muted">
+                        <tr>
+                            <th>Banner & Bố cục</th>
+                            <th>Tiêu đề & Mã ưu đãi</th>
+                            <th>Thiết kế & Hành vi</th>
+                            <th>Thời gian hiệu lực</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in popups)
+                        {
+                            string layoutName = p.LayoutType == "SplitLeft" ? "2 Cột Trái/Phải"
+                                : (p.LayoutType == "PosterOverlay" ? "Poster Toàn Khung" : "Ảnh Trên - Chữ Dưới");
+                            string freqName = p.ShowFrequency == "EveryLoad" ? "Mỗi lần tải trang"
+                                : (p.ShowFrequency == "OncePerDay" ? "1 lần / ngày" : "1 lần / phiên");
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@p.ImageUrl" class="rounded-3 border shadow-sm" style="width:88px;height:52px;object-fit:cover" alt="" onerror="this.src='/images/samflora/b12-main.jpg';" />
+                                        <div>
+                                            <span class="badge bg-dark-subtle text-dark border" style="font-size:0.7rem">@layoutName</span>
+                                            <div class="text-muted" style="font-size:0.7rem">@p.BadgeText</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold small">@(p.Title ?? "Hot Deal CHAM Flowers")</div>
+                                    <div class="text-muted small">
+                                        Mã: <strong class="text-danger">@(p.CouponCode ?? "-")</strong>
+                                        @if (p.DiscountPercent.HasValue && p.DiscountPercent > 0)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger ms-1">-@p.DiscountPercent%</span>
+                                        }
+                                        • Đích: @(p.Product != null ? p.Product.Name : (p.TargetUrl ?? "/HotDeal"))
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-1 mb-1">
+                                        <span class="d-inline-block rounded-circle border" style="width:16px;height:16px;background:@(p.BackgroundColor ?? "#ffffff")" title="Màu nền"></span>
+                                        <span class="d-inline-block rounded-circle border" style="width:16px;height:16px;background:@(p.AccentColor ?? "#be123c")" title="Màu nhấn CTA"></span>
+                                        <span class="small text-muted ms-1">@freqName</span>
+                                    </div>
+                                    <div class="text-muted" style="font-size:0.72rem">
+                                        <i class="bi bi-stopwatch me-1"></i>Trễ: @(p.DelaySeconds)s • Nút: "@(p.ButtonText ?? "Xem ngay")"
+                                    </div>
+                                </td>
+                                <td class="small">
+                                    @(p.StartDate.HasValue ? p.StartDate.Value.ToString("dd/MM/yyyy") : "Ngay lập tức") → @(p.EndDate.HasValue ? p.EndDate.Value.ToString("dd/MM/yyyy") : "Không giới hạn")
+                                </td>
+                                <td>
+                                    @if (p.IsActiveNow)
+                                    {
+                                        <span class="badge bg-success rounded-pill"><i class="bi bi-broadcast me-1"></i>Đang hiển thị</span>
+                                    }
+                                    else if (!p.IsActive)
+                                    {
+                                        <span class="badge bg-secondary rounded-pill">Đang tắt</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill">Chờ / Hết hạn</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <form action="@Url.Action("TogglePopupActive", "HotDeal", new { id = p.Id })" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm @(p.IsActive ? "btn-outline-success" : "btn-outline-secondary") rounded-pill px-2 py-1" title="Bật/Tắt nhanh">
+                                                <i class="bi @(p.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i> @(p.IsActive ? "Bật" : "Tắt")
+                                            </button>
+                                        </form>
+                                        <a href="@Url.Action("EditHotDealPopup", "HotDeal", new { id = p.Id })" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1" title="Mở Popup Builder">
+                                            <i class="bi bi-sliders"></i> Thiết kế
+                                        </a>
+                                        <form action="@Url.Action("DeleteHotDealPopup", "HotDeal", new { id = p.Id })" method="post" class="d-inline" onsubmit="return confirm('Xác nhận xóa Hot Deal Popup này?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Gắn sản phẩm vào danh sách Hot Deal -->
+    <div class="col-12">
+        <div class="admin-card p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-fire text-danger me-2"></i>Sản Phẩm Đang Khuyến Mãi Hot Deal (@hotProducts.Count mẫu)</h6>
+
+            <form action="@Url.Action("SetProductHotDeal", "HotDeal")" method="post" class="row g-2 align-items-end mb-4 p-3 rounded-3 bg-light border">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="isHotDeal" value="true" />
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Chọn mẫu hoa đưa vào Hot Deal</label>
+                    <select name="productId" class="form-select form-select-sm">
+                        @foreach (var ap in allProducts)
+                        {
+                            <option value="@ap.Id">@ap.Name (Giá hiện tại: @AppHelpers.FormatVnd(ap.Price))</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Giá khuyến mãi mới (Để trống nếu giữ giá hiện tại)</label>
+                    <input type="number" name="salePrice" step="1000" class="form-control form-control-sm" placeholder="VD: 499000" />
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-sm btn-danger">+ Thêm Hot Deal</button>
+                </div>
+            </form>
+
+            <div class="row g-3">
+                @foreach (var hp in hotProducts)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="border rounded-3 p-3 d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="@hp.MainImageUrl" class="rounded-2 border" style="width:52px;height:52px;object-fit:cover" alt="" />
+                                <div>
+                                    <div class="fw-bold small">@hp.Name</div>
+                                    <div class="text-danger fw-bold small">
+                                        @AppHelpers.FormatVnd(hp.Price)
+                                        @if (hp.DiscountPercent > 0)
+                                        {
+                                            <span class="badge bg-danger ms-1">-@hp.DiscountPercent%</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <form action="@Url.Action("SetProductHotDeal", "HotDeal")" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@hp.Id" />
+                                <input type="hidden" name="isHotDeal" value="false" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Gỡ khỏi Hot Deal">Gỡ</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

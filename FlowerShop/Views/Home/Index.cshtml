@@ -1,0 +1,244 @@
+@model FlowerShop.Models.HomeViewModel
+@{
+    ViewData["Title"] = "Trang chủ";
+    DateTime countdownDate = Model.ActivePopup != null && Model.ActivePopup.EndDate.HasValue
+        ? Model.ActivePopup.EndDate.Value
+        : DateTime.Now.AddDays(5);
+}
+
+<div class="container mt-3">
+    <!-- Hero Carousel -->
+    @if (Model.Banners.Any())
+    {
+        <div id="ntHeroCarousel" class="carousel slide mb-5 shadow-sm rounded-4 overflow-hidden" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                @for (int i = 0; i < Model.Banners.Count; i++)
+                {
+                    <button type="button" data-bs-target="#ntHeroCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
+                }
+            </div>
+            <div class="carousel-inner">
+                @for (int i = 0; i < Model.Banners.Count; i++)
+                {
+                    var b = Model.Banners[i];
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                        <div class="hero-slide" style="background-image: url('@b.ImageUrl');">
+                            <div class="hero-overlay">
+                                <span class="badge bg-white text-danger rounded-pill px-3 py-2 mb-3 fw-bold">
+                                    <i class="bi bi-stars me-1"></i> CHAM Flowers Boutique
+                                </span>
+                                <h1 class="display-5 fw-bold mb-3">@b.Title</h1>
+                                <p class="lead opacity-90 mb-4">@b.Subtitle</p>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <a href="@(string.IsNullOrEmpty(b.LinkUrl) ? "/Product" : b.LinkUrl)" class="btn btn-light text-danger fw-bold rounded-pill px-4 py-2 shadow-sm">
+                                        @(string.IsNullOrEmpty(b.ButtonText) ? "Đặt hoa ngay" : b.ButtonText) <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                    <a href="@Url.Action("Index", "HotDeal")" class="btn btn-outline-light rounded-pill px-4 py-2">
+                                        <i class="bi bi-fire me-1"></i> Săn Hot Deal
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#ntHeroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#ntHeroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        </div>
+    }
+
+    <!-- Cam kết dịch vụ -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-lg-3">
+            <div class="p-3 bg-white rounded-4 border h-100 d-flex align-items-center gap-3">
+                <span class="fs-2 text-danger"><i class="bi bi-truck"></i></span>
+                <div>
+                    <div class="fw-bold small">Giao Hoa Hỏa Tốc 2H</div>
+                    <div class="text-muted" style="font-size:0.78rem">Gửi ảnh thực tế trước khi giao</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="p-3 bg-white rounded-4 border h-100 d-flex align-items-center gap-3">
+                <span class="fs-2 text-danger"><i class="bi bi-flower1"></i></span>
+                <div>
+                    <div class="fw-bold small">100% Hoa Tươi Tuyển Chọn</div>
+                    <div class="text-muted" style="font-size:0.78rem">Nhập mới mỗi sáng từ Đà Lạt</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="p-3 bg-white rounded-4 border h-100 d-flex align-items-center gap-3">
+                <span class="fs-2 text-danger"><i class="bi bi-gift"></i></span>
+                <div>
+                    <div class="fw-bold small">Miễn Phí Thiệp & Banner</div>
+                    <div class="text-muted" style="font-size:0.78rem">Thiết kế thông điệp tinh tế</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="p-3 bg-white rounded-4 border h-100 d-flex align-items-center gap-3">
+                <span class="fs-2 text-danger"><i class="bi bi-shield-check"></i></span>
+                <div>
+                    <div class="fw-bold small">Thanh Toán An Toàn</div>
+                    <div class="text-muted" style="font-size:0.78rem">Hỗ trợ COD & Cổng VNPay</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bộ sưu tập theo Chủng loại hoa -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <div>
+                <span class="text-danger fw-bold small text-uppercase">Bộ sưu tập</span>
+                <h2 class="h3 fw-bold mb-0">Khám Phá Theo Loài Hoa</h2>
+            </div>
+            <a href="@Url.Action("Index", "Product")" class="text-danger text-decoration-none fw-semibold small">Xem tất cả <i class="bi bi-chevron-right"></i></a>
+        </div>
+        <div class="row g-3">
+            @foreach (var fc in Model.FlowerCategories)
+            {
+                <div class="col-6 col-md-4 col-lg">
+                    <a href="@Url.Action("Index", "Product", new { flowerCategoryId = fc.Id })" class="flower-cat-card">
+                        <img src="@(fc.ImageUrl ?? "/images/samflora/b10-main.jpg")" alt="@fc.Name" />
+                        <div class="fw-bold small">@fc.Name</div>
+                        <div class="text-muted mt-1" style="font-size:0.74rem">@fc.Description</div>
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Hot Deal Khuyến Mãi kèm Countdown -->
+    @if (Model.HotDealProducts.Any())
+    {
+        <section class="p-4 rounded-4 mb-5 border" style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <span class="badge bg-danger rounded-pill px-3 py-1 mb-2"><i class="bi bi-lightning-charge-fill"></i> FLASH SALE HOA TƯƠI</span>
+                    <h2 class="h3 fw-bold mb-0 text-dark">Ưu Đãi Hot Deal Trong Tuần</h2>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="countdown-box" data-countdown="@countdownDate.ToString("yyyy-MM-ddTHH:mm:ss")">
+                        <div class="countdown-unit"><strong class="cd-days">05</strong><small>Ngày</small></div>
+                        <div class="countdown-unit"><strong class="cd-hours">12</strong><small>Giờ</small></div>
+                        <div class="countdown-unit"><strong class="cd-mins">45</strong><small>Phút</small></div>
+                        <div class="countdown-unit"><strong class="cd-secs">30</strong><small>Giây</small></div>
+                    </div>
+                    <a href="@Url.Action("Index", "HotDeal")" class="btn btn-nt-primary d-none d-sm-inline-block">Xem tất cả</a>
+                </div>
+            </div>
+            <div class="row g-4">
+                @foreach (var p in Model.HotDealProducts)
+                {
+                    <div class="col-sm-6 col-lg-3">
+                        @Html.Partial("_ProductCard", p)
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Sản phẩm nổi bật -->
+    <section class="mb-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+            <div>
+                <span class="text-danger fw-bold small text-uppercase">Best Sellers</span>
+                <h2 class="h3 fw-bold mb-0">Mẫu Hoa Nổi Bật Được Yêu Thích</h2>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var cat in Model.Categories)
+                {
+                    <a href="@Url.Action("Index", "Product", new { categoryId = cat.Id })"
+                       class="btn btn-sm btn-light border rounded-pill px-3">@cat.Name</a>
+                }
+            </div>
+        </div>
+        <div class="row g-4">
+            @foreach (var p in Model.FeaturedProducts)
+            {
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    @Html.Partial("_ProductCard", p)
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Mã giảm giá đang áp dụng -->
+    @if (Model.ActiveCoupons.Any())
+    {
+        <section class="mb-5">
+            <h3 class="h4 fw-bold mb-3"><i class="bi bi-ticket-perforated-fill text-danger me-2"></i>Mã Ưu Đãi Dành Cho Bạn</h3>
+            <div class="row g-3">
+                @foreach (var c in Model.ActiveCoupons)
+                {
+                    <div class="col-md-4">
+                        <div class="bg-white border border-danger border-opacity-25 rounded-4 p-3 d-flex justify-content-between align-items-center shadow-sm">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-danger fs-6">@c.Code</span>
+                                    @if (c.VipOnly)
+                                    {
+                                        <span class="badge bg-warning text-dark">Khách VIP</span>
+                                    }
+                                </div>
+                                <div class="small fw-semibold mt-2">@c.Description</div>
+                                <div class="text-muted" style="font-size:0.75rem">Đơn tối thiểu @AppHelpers.FormatVnd(c.MinOrderAmount)</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-nt-outline"
+                                    onclick="if(navigator.clipboard){navigator.clipboard.writeText('@c.Code');} showNtToast('Đã sao chép mã @c.Code!', true);">
+                                Sao chép
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Cẩm nang & Tin tức -->
+    @if (Model.LatestNews.Any())
+    {
+        <section>
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div>
+                    <span class="text-danger fw-bold small text-uppercase">Góc chia sẻ</span>
+                    <h2 class="h3 fw-bold mb-0">Cẩm Nang & Ý Nghĩa Hoa Tươi</h2>
+                </div>
+                <a href="@Url.Action("News", "Home")" class="text-danger text-decoration-none fw-semibold small">Xem thêm bài viết <i class="bi bi-chevron-right"></i></a>
+            </div>
+            <div class="row g-4">
+                @foreach (var art in Model.LatestNews)
+                {
+                    <div class="col-md-4">
+                        <div class="flower-card">
+                            <a href="@Url.Action("NewsDetail", "Home", new { id = art.Id })" class="text-decoration-none">
+                                <img src="@(art.ImageUrl ?? "/images/samflora/editorial-2.jpg")" class="w-100" style="height:210px;object-fit:cover" alt="@art.Title" />
+                            </a>
+                            <div class="p-3 d-flex flex-column flex-grow-1">
+                                <span class="badge bg-danger-subtle text-danger align-self-start mb-2">@art.CategoryName</span>
+                                <h6 class="fw-bold">
+                                    <a href="@Url.Action("NewsDetail", "Home", new { id = art.Id })" class="text-dark text-decoration-none">@art.Title</a>
+                                </h6>
+                                <p class="text-muted small mb-0 flex-grow-1">@art.Summary</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window['checkHotDealPopup']) window['checkHotDealPopup'](false);
+        });
+    </script>
+}

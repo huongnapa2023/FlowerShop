@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Từ chối truy cập (Access Denied)";
+    bool isAdmin = User != null && User.IsInRole("Admin");
+}
+
+<div class="container py-5 text-center" style="max-width:580px">
+    <div class="bg-white p-5 rounded-4 border shadow-sm">
+        <div class="d-inline-flex p-3 rounded-circle bg-danger bg-opacity-10 text-danger mb-3">
+            <i class="bi bi-shield-x display-4"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-2">Quyền Truy Cập Bị Giới Hạn</h3>
+        
+        @if (isAdmin)
+        {
+            <div class="alert alert-warning rounded-3 small text-start mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>Thông báo phân quyền nội bộ:</strong> Bạn đang đăng nhập bằng tài khoản Quản trị viên con, nhưng <strong>chưa được Admin Tổng phân công phụ trách mô-đun công việc này</strong>.
+            </div>
+            <p class="text-muted small mb-4">
+                Vui lòng liên hệ Admin Tổng (<code>admin@chamflowers.vn</code>) để được cấp quyền trên ma trận quản trị nếu bạn cần phụ trách khu vực này.
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-arrow-left me-1"></i>Khu vực được phân công
+                </a>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-nt-primary rounded-pill px-4">
+                    <i class="bi bi-shop me-1"></i>Về trang chủ
+                </a>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted mb-4">Tài khoản hiện tại của bạn không có quyền truy cập vào khu vực quản trị này.</p>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-nt-primary rounded-pill px-4">Quay về trang chủ</a>
+        }
+    </div>
+</div>

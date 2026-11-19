@@ -1,0 +1,9 @@
+﻿@model System.Web.Mvc.HandleErrorInfo
+@{
+    ViewData["Title"] = "Đã xảy ra lỗi";
+}
+<div class="container py-5 text-center">
+    <h1 class="text-danger fw-bold">Đã xảy ra lỗi xử lý yêu cầu</h1>
+    <p class="text-muted">Vui lòng thử lại hoặc quay về trang chủ CHAM Flowers.</p>
+    <a href="@Url.Action("Index", "Home")" class="btn btn-nt-primary px-4">Về trang chủ</a>
+</div>

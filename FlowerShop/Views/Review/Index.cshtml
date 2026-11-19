@@ -1,0 +1,83 @@
+﻿@model PagedList.IPagedList<FlowerShop.Models.Review>
+@using FlowerShop.Models
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Quản lý & Phê duyệt Đánh giá Sản phẩm - CHAM Flowers Executive CMS";
+    string cur = ViewBag.Filter as string;
+}
+
+<div class="admin-card p-3 px-4 mb-4 d-flex flex-wrap gap-2">
+    <a href="@Url.Action("Index", "Review")" class="admin-filter-pill @(string.IsNullOrEmpty(cur) ? "active" : "")">Tất cả đánh giá</a>
+    <a href="@Url.Action("Index", "Review", new { filter = "pending" })" class="admin-filter-pill @(cur == "pending" ? "active" : "")">Chờ phê duyệt</a>
+    <a href="@Url.Action("Index", "Review", new { filter = "approved" })" class="admin-filter-pill @(cur == "approved" ? "active" : "")">Đã hiển thị công khai</a>
+    <a href="@Url.Action("Index", "Review", new { filter = "hidden" })" class="admin-filter-pill @(cur == "hidden" ? "active" : "")">Đã ẩn</a>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light small text-muted">
+                <tr>
+                    <th class="ps-3">Sản phẩm</th>
+                    <th>Khách hàng</th>
+                    <th>Xếp hạng</th>
+                    <th>Nội dung phản hồi</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end pe-3">Phê duyệt</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td class="ps-3">
+                            <div class="fw-semibold small">@(r.Product != null ? r.Product.Name : "Sản phẩm")</div>
+                            <div class="text-muted" style="font-size:0.72rem">@r.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                        </td>
+                        <td class="small">@(r.User != null ? r.User.FullName : "Khách hàng")</td>
+                        <td class="text-warning small text-nowrap">
+                            @for (int i = 0; i < r.Rating; i++)
+                            {
+                                <i class="bi bi-star-fill"></i>
+                            }
+                        </td>
+                        <td class="small" style="max-width:340px">@r.Content</td>
+                        <td>
+                            @if (r.IsApproved)
+                            {
+                                <span class="badge bg-success">Đã duyệt đăng</span>
+                            }
+                            else if (r.Status == ReviewStatus.Hidden)
+                            {
+                                <span class="badge bg-secondary">Đã ẩn</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                            }
+                        </td>
+                        <td class="text-end pe-3">
+                            <div class="d-inline-flex gap-1">
+                                <a href="@Url.Action("Details", "Review", new { id = r.Id })" class="btn btn-sm btn-light border">Chi tiết</a>
+                                @if (!r.IsApproved)
+                                {
+                                    <form action="@Url.Action("Approve", "Review", new { id = r.Id })" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-success">Duyệt</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form action="@Url.Action("Hide", "Review", new { id = r.Id })" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Ẩn</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

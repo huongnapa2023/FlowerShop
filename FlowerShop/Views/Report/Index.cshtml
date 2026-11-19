@@ -1,0 +1,447 @@
+﻿@model FlowerShop.Models.ReportDashboardViewModel
+@using FlowerShop.Services
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Dashboard & Báo cáo Thống kê Kinh doanh - CHAM Flowers Executive CMS";
+    var curPreset = Request.QueryString["preset"] ?? "";
+    var adminName = (User.Identity != null && !string.IsNullOrEmpty(User.Identity.Name)) ? User.Identity.Name : "Quản trị viên";
+}
+
+<!-- Executive Welcome Hero & Bộ lọc thời gian -->
+<div class="admin-hero-banner mb-4">
+    <div class="row align-items-center g-3 position-relative" style="z-index:1">
+        <div class="col-xl-5">
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2" style="background:rgba(255,255,255,0.14);font-size:0.76rem;font-weight:600">
+                <i class="bi bi-stars text-warning"></i> Báo cáo kỳ: @Model.PeriodLabel
+            </div>
+            <h3 class="serif-heading fw-bold mb-1">Xin chào, @adminName!</h3>
+            <p class="mb-0 text-white-50 small">Theo dõi doanh thu, đơn đặt hoa, khách hàng VIP và hạn bảo quản kho hoa tươi theo thời gian thực.</p>
+        </div>
+
+        <div class="col-xl-7">
+            <div class="p-3 rounded-4 d-flex flex-wrap justify-content-xl-end align-items-center gap-2" style="background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.16)">
+                <form action="@Url.Action("Index", "Report")" method="get" class="d-flex flex-wrap align-items-center gap-2">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="@Url.Action("Index", "Report", new { preset = "7d" })" class="btn @(curPreset == "7d" ? "btn-warning fw-bold text-dark" : "btn-outline-light")">7 ngày</a>
+                        <a href="@Url.Action("Index", "Report", new { preset = "30d" })" class="btn @(string.IsNullOrEmpty(curPreset) || curPreset == "30d" ? "btn-warning fw-bold text-dark" : "btn-outline-light")">30 ngày</a>
+                        <a href="@Url.Action("Index", "Report", new { preset = "90d" })" class="btn @(curPreset == "90d" ? "btn-warning fw-bold text-dark" : "btn-outline-light")">90 ngày</a>
+                    </div>
+                    <input type="date" name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm border-0" style="width:136px" title="Từ ngày" />
+                    <span class="text-white-50 small">→</span>
+                    <input type="date" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm border-0" style="width:136px" title="Đến ngày" />
+                    <button type="submit" class="btn btn-sm btn-light fw-bold text-danger rounded-pill px-3">
+                        <i class="bi bi-funnel-fill me-1"></i>Lọc
+                    </button>
+                </form>
+
+                <a href="@Url.Action("ExportCsv", "Report", new { fromDate = Model.FromDate.ToString("yyyy-MM-dd"), toDate = Model.ToDate.ToString("yyyy-MM-dd") })"
+                   class="btn btn-sm btn-success rounded-pill px-3 fw-semibold shadow-sm">
+                    <i class="bi bi-file-earmark-excel-fill me-1"></i> Xuất Excel (.CSV)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.NoDataMessage != null)
+{
+    <div class="alert alert-warning rounded-4 border-0 shadow-sm mb-4">
+        <i class="bi bi-info-circle-fill me-2"></i>@ViewBag.NoDataMessage
+    </div>
+}
+
+<!-- 4 Signature Executive KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-kpi">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Doanh thu thực nhận</div>
+                    <div class="kpi-value text-danger">@AppHelpers.FormatVnd(Model.TotalRevenue)</div>
+                </div>
+                <div class="kpi-icon-orb kpi-orb-rose">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                <span class="text-muted" style="font-size:0.78rem">Lợi nhuận gộp ước tính</span>
+                <span class="badge bg-success-subtle text-success">+@AppHelpers.FormatVnd(Model.GrossProfit)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-kpi kpi-orders">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Tổng đơn hàng kỳ này</div>
+                    <div class="kpi-value">@Model.TotalOrders <span class="fs-6 fw-semibold text-muted">đơn</span></div>
+                </div>
+                <div class="kpi-icon-orb kpi-orb-indigo">
+                    <i class="bi bi-bag-heart-fill"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top small">
+                <span>Hoàn thành: <strong class="text-success">@Model.CompletedOrders</strong></span>
+                <a href="@Url.Action("AdminIndex", "Order", new { status = "Chờ xác nhận" })" class="badge bg-warning-subtle text-warning-emphasis text-decoration-none">
+                    Chờ duyệt: @Model.PendingOrders
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-kpi kpi-vip">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Hội viên & Khách VIP</div>
+                    <div class="kpi-value">@Model.TotalCustomers <span class="fs-6 fw-semibold text-muted">khách</span></div>
+                </div>
+                <div class="kpi-icon-orb kpi-orb-amber">
+                    <i class="bi bi-gem"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top small">
+                <span>Hạng VIP: <strong class="text-danger">@Model.VipCustomers</strong></span>
+                <span class="badge bg-primary-subtle text-primary">+@Model.NewCustomersInPeriod mới</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-kpi kpi-stock">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">Danh mục & Kho hoa tươi</div>
+                    <div class="kpi-value">@Model.TotalProducts <span class="fs-6 fw-semibold text-muted">mẫu hoa</span></div>
+                </div>
+                <div class="kpi-icon-orb kpi-orb-emerald">
+                    <i class="bi bi-flower1"></i>
+                </div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top small">
+                <span class="badge bg-danger-subtle text-danger">Sắp hết: @Model.LowStockCount</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis">Sắp héo/hết hạn: @Model.ExpiringSoonCount</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ Doanh thu & Biểu đồ Trạng thái đơn hàng -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="admin-card p-4 h-100">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h6 class="fw-bold mb-0">Biểu Đồ Doanh Thu & Lợi Nhuận Gộp</h6>
+                    <div class="text-muted small">Phân tích biến động doanh thu thực tế theo mốc thời gian (@Model.PeriodLabel)</div>
+                </div>
+                <span class="badge bg-danger-subtle text-danger"><i class="bi bi-graph-up-arrow me-1"></i>Tỷ suất gộp ~42%</span>
+            </div>
+            <canvas id="revenueChart" height="118"></canvas>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="admin-card p-4 h-100 d-flex flex-column">
+            <div class="mb-3">
+                <h6 class="fw-bold mb-0">Tỷ Lệ Trạng Thái Đơn Hàng</h6>
+                <div class="text-muted small">Phân bổ @Model.TotalOrders đơn hàng trong kỳ</div>
+            </div>
+            <div class="my-auto position-relative" style="max-height:220px">
+                <canvas id="orderStatusChart"></canvas>
+            </div>
+            <div class="row g-2 mt-3 pt-3 border-top small">
+                <div class="col-6 d-flex justify-content-between"><span><i class="bi bi-circle-fill text-success me-1" style="font-size:0.55rem"></i>Hoàn thành</span><strong>@Model.CompletedOrders</strong></div>
+                <div class="col-6 d-flex justify-content-between"><span><i class="bi bi-circle-fill text-warning me-1" style="font-size:0.55rem"></i>Chờ duyệt</span><strong>@Model.PendingOrders</strong></div>
+                <div class="col-6 d-flex justify-content-between"><span><i class="bi bi-circle-fill text-primary me-1" style="font-size:0.55rem"></i>Đang xử lý</span><strong>@Model.ProcessingOrders</strong></div>
+                <div class="col-6 d-flex justify-content-between"><span><i class="bi bi-circle-fill text-info me-1" style="font-size:0.55rem"></i>Đang giao</span><strong>@Model.ShippingOrders</strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Hoa Bán Chạy & Top Khách Hàng VIP -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="admin-card overflow-hidden h-100">
+            <div class="p-4 pb-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Top Mẫu Hoa Bán Chạy Nhất</h6>
+                    <div class="text-muted small">Xếp hạng theo số lượng bó/hộp hoa tiêu thụ</div>
+                </div>
+                <a href="@Url.Action("AdminIndex", "Product")" class="btn btn-sm btn-light border rounded-pill px-3">Xem kho hoa</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Hạng</th>
+                            <th>Mẫu hoa thiết kế</th>
+                            <th>Danh mục</th>
+                            <th>Đã bán</th>
+                            <th>Doanh thu</th>
+                            <th class="pe-4 text-end">Tồn kho</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int rank = 1; }
+                        @foreach (var p in Model.BestSellingProducts)
+                        {
+                            string rCls = rank == 1 ? "rank-1" : (rank == 2 ? "rank-2" : (rank == 3 ? "rank-3" : "rank-n"));
+                            <tr>
+                                <td class="ps-4"><span class="rank-medal @rCls">@rank</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="@p.ImageUrl" class="rounded-3 border shadow-sm" style="width:44px;height:44px;object-fit:cover" alt="" />
+                                        <span class="fw-bold small text-dark">@p.ProductName</span>
+                                    </div>
+                                </td>
+                                <td class="small text-muted">@p.CategoryName</td>
+                                <td><span class="badge bg-success-subtle text-success">@p.SoldQuantity bó</span></td>
+                                <td class="fw-bold text-danger small">@AppHelpers.FormatVnd(p.TotalRevenue)</td>
+                                <td class="pe-4 text-end">
+                                    <span class="badge @(p.StockQuantity <= 5 ? "bg-danger-subtle text-danger" : "bg-light text-secondary border")">@p.StockQuantity</span>
+                                </td>
+                            </tr>
+                            rank++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="admin-card overflow-hidden h-100">
+            <div class="p-4 pb-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="bi bi-gem text-danger me-2"></i>Top Khách Hàng VIP Thân Thiết</h6>
+                    <div class="text-muted small">Tự động nâng hạng VIP khi tích lũy từ 5.000.000 ₫</div>
+                </div>
+                <a href="@Url.Action("Index", "Customer")" class="btn btn-sm btn-light border rounded-pill px-3">Tất cả</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Khách hàng</th>
+                            <th>Hạng thẻ</th>
+                            <th class="text-end pe-4">Tổng chi tiêu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Model.TopVipCustomers)
+                        {
+                            string uInit = AppHelpers.GetInitials(u.FullName);
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="customer-avatar-circle">@uInit</span>
+                                        <div>
+                                            <div class="fw-bold small text-dark">@u.FullName</div>
+                                            <div class="text-muted" style="font-size:0.74rem">@u.Phone</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (u.IsVip)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-award-fill me-1"></i>VIP</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-secondary border">Thành viên</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4 fw-bold text-danger small">@AppHelpers.FormatVnd(u.TotalSpent)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Báo cáo Kho: Cảnh báo sắp hết hàng & sắp hết hạn tươi -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="admin-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cảnh Báo Hoa Sắp Hết Hàng (Tồn ≤ 5)</h6>
+                <span class="badge bg-danger-subtle text-danger">@Model.LowStockProducts.Count mẫu</span>
+            </div>
+            @if (!Model.LowStockProducts.Any())
+            {
+                <div class="p-4 rounded-4 bg-success-subtle text-success small fw-semibold text-center">
+                    <i class="bi bi-check-circle-fill me-1"></i> Tất cả sản phẩm đều đủ số lượng an toàn trong kho.
+                </div>
+            }
+            else
+            {
+                <div class="d-grid gap-2">
+                    @foreach (var lp in Model.LowStockProducts)
+                    {
+                        <div class="p-3 rounded-4 border d-flex justify-content-between align-items-center gap-2" style="background:#fffafb">
+                            <div class="d-flex align-items-center gap-3 min-w-0">
+                                <img src="@lp.MainImageUrl" class="rounded-3 border" style="width:42px;height:42px;object-fit:cover" alt="" />
+                                <div class="min-w-0">
+                                    <div class="fw-bold small text-dark text-truncate">@lp.Name</div>
+                                    <div class="text-danger" style="font-size:0.75rem">Chỉ còn <strong>@lp.StockQuantity bó</strong> trong kho lạnh</div>
+                                </div>
+                            </div>
+                            <a href="@Url.Action("Edit", "Product", new { id = lp.Id })" class="btn btn-sm btn-dark rounded-pill px-3 text-nowrap">
+                                <i class="bi bi-plus-circle me-1"></i>Nhập thêm
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="admin-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-warning-emphasis mb-0"><i class="bi bi-hourglass-split me-2"></i>Cảnh Báo Mẫu Hoa Sắp Đến Hạn Bảo Quản</h6>
+                <span class="badge bg-warning-subtle text-warning-emphasis">@Model.ExpiringProducts.Count mẫu</span>
+            </div>
+            @if (!Model.ExpiringProducts.Any())
+            {
+                <div class="p-4 rounded-4 bg-success-subtle text-success small fw-semibold text-center">
+                    <i class="bi bi-check-circle-fill me-1"></i> Không có lô hoa nào sắp hết hạn tươi trong 4 ngày tới.
+                </div>
+            }
+            else
+            {
+                <div class="d-grid gap-2">
+                    @foreach (var ep in Model.ExpiringProducts)
+                    {
+                        <div class="p-3 rounded-4 border d-flex justify-content-between align-items-center gap-2" style="background:#fffdf5">
+                            <div class="d-flex align-items-center gap-3 min-w-0">
+                                <img src="@ep.MainImageUrl" class="rounded-3 border" style="width:42px;height:42px;object-fit:cover" alt="" />
+                                <div class="min-w-0">
+                                    <div class="fw-bold small text-dark text-truncate">@ep.Name</div>
+                                    <div class="text-warning-emphasis" style="font-size:0.75rem">Hạn tươi dự kiến: <strong>@(ep.ExpiryDate.HasValue ? ep.ExpiryDate.Value.ToString("dd/MM/yyyy") : "")</strong></div>
+                                </div>
+                            </div>
+                            <a href="@Url.Action("Manage", "HotDeal")" class="btn btn-sm btn-admin-primary text-nowrap">
+                                <i class="bi bi-fire me-1"></i>Đẩy Hot Deal
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var revLabels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.RevenueSeries.Select(x => x.Label)));
+        var revData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.RevenueSeries.Select(x => x.Revenue)));
+        var profitData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.RevenueSeries.Select(x => x.GrossProfit)));
+
+        if (window.Chart) {
+            Chart.defaults.font.family = "'Plus Jakarta Sans', 'Segoe UI', sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            var revCanvas = document.getElementById('revenueChart');
+            if (revCanvas) {
+                var ctx = revCanvas.getContext('2d');
+                var gradRev = ctx.createLinearGradient(0, 0, 0, 280);
+                gradRev.addColorStop(0, '#e11d48');
+                gradRev.addColorStop(1, '#fb7185');
+
+                var gradProfit = ctx.createLinearGradient(0, 0, 0, 280);
+                gradProfit.addColorStop(0, '#f59e0b');
+                gradProfit.addColorStop(1, '#fcd34d');
+
+                new Chart(revCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: revLabels,
+                        datasets: [
+                            {
+                                label: 'Doanh thu thực nhận',
+                                data: revData,
+                                backgroundColor: gradRev,
+                                borderRadius: 10,
+                                maxBarThickness: 34
+                            },
+                            {
+                                label: 'Lợi nhuận gộp ước tính',
+                                data: profitData,
+                                backgroundColor: gradProfit,
+                                borderRadius: 10,
+                                maxBarThickness: 34
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                align: 'end',
+                                labels: { usePointStyle: true, boxWidth: 8, padding: 16, font: { weight: '600' } }
+                            },
+                            tooltip: {
+                                backgroundColor: '#1e1b2e',
+                                padding: 12,
+                                cornerRadius: 12,
+                                callbacks: {
+                                    label: function (context) {
+                                        var val = Number(context.raw || 0).toLocaleString('vi-VN');
+                                        return ' ' + context.dataset.label + ': ' + val + ' ₫';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, border: { display: false } },
+                            y: {
+                                border: { display: false },
+                                grid: { color: '#f1f5f9' },
+                                ticks: {
+                                    callback: function (v) {
+                                        if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.0', '') + 'M';
+                                        if (v >= 1000) return (v / 1000) + 'K';
+                                        return v;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            var statusCanvas = document.getElementById('orderStatusChart');
+            if (statusCanvas) {
+                new Chart(statusCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Chờ xác nhận', 'Đang xử lý', 'Đang giao', 'Hoàn thành', 'Đã hủy'],
+                        datasets: [{
+                            data: [@Model.PendingOrders, @Model.ProcessingOrders, @Model.ShippingOrders, @Model.CompletedOrders, @Model.CancelledOrders],
+                            backgroundColor: ['#f59e0b', '#3b82f6', '#06b6d4', '#10b981', '#cbd5e1'],
+                            borderWidth: 3,
+                            borderColor: '#ffffff',
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+}

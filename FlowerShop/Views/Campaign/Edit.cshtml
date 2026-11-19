@@ -1,0 +1,204 @@
+@model FlowerShop.Models.Campaign
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Chỉnh Sửa Chiến Dịch";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-pencil-square text-danger"></i> Chỉnh Sửa Chiến Dịch: @Model.Name
+        </h5>
+        <span class="badge @Model.StatusBadgeClass rounded-pill px-3 py-1">
+            @Model.StatusLabel
+        </span>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-sm btn-light border rounded-pill px-3">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại
+    </a>
+</div>
+
+@using (Html.BeginForm("Edit", "Campaign", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger rounded-4 py-2" })
+
+    <div class="row g-4">
+        <!-- Cột trái: Thông tin chính -->
+        <div class="col-lg-8">
+            <!-- Thẻ 1: Thông tin cơ bản -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+                        <i class="bi bi-info-circle-fill text-danger"></i> Thông tin cơ bản chiến dịch
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold text-dark">Tên chiến dịch <span class="text-danger">*</span></label>
+                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control rounded-3", required = "required" })
+                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Dịp lễ hội (Phân loại)</label>
+                            <select name="SeasonType" class="form-select rounded-3">
+                                <option value="20-11" @(Model.SeasonType == "20-11" ? "selected" : "")>Tri Ân 20/11</option>
+                                <option value="Noel" @(Model.SeasonType == "Noel" ? "selected" : "")>Giáng Sinh Noel</option>
+                                <option value="Tet" @(Model.SeasonType == "Tet" ? "selected" : "")>Tết Nguyên Đán</option>
+                                <option value="Valentine" @(Model.SeasonType == "Valentine" ? "selected" : "")>Valentine 14/2</option>
+                                <option value="8-3" @(Model.SeasonType == "8-3" ? "selected" : "")>Quốc Tế Phụ Nữ 8/3</option>
+                                <option value="Other" @(Model.SeasonType == "Other" ? "selected" : "")>Dịp lễ / Sự kiện khác</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Ngày bắt đầu áp dụng <span class="text-danger">*</span></label>
+                            <input type="date" name="StartDate" class="form-control rounded-3" value="@Model.StartDate.ToString("yyyy-MM-dd")" required />
+                            <small class="text-muted" style="font-size:0.75rem">Chiến dịch tự động bật trên web từ ngày này.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Ngày kết thúc áp dụng <span class="text-danger">*</span></label>
+                            <input type="date" name="EndDate" class="form-control rounded-3" value="@Model.EndDate.ToString("yyyy-MM-dd")" required />
+                            <small class="text-muted" style="font-size:0.75rem">Hệ thống tự động hạ chiến dịch xuống sau ngày này.</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-dark">Dòng chữ hiển thị trên thanh Promo Bar (Topbar)</label>
+                            @Html.TextBoxFor(m => m.PromoBarText, new { @class = "form-control rounded-3" })
+                            <small class="text-muted" style="font-size:0.75rem">Xuất hiện trên thanh bar trên cùng của website dành cho khách hàng.</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-dark">Đường dẫn đích (Khi khách bấm vào dòng chữ/banner)</label>
+                            @Html.TextBoxFor(m => m.TargetUrl, new { @class = "form-control rounded-3" })
+                            <small class="text-muted" style="font-size:0.75rem">Link điều hướng tới bộ sưu tập hoa của mùa lễ đó.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ 2: Banner Hero Trang Chủ -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+                        <i class="bi bi-images text-danger"></i> Banner Trang Chủ Tự Động
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @if (!string.IsNullOrEmpty(Model.BannerUrl))
+                        {
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-dark">Ảnh Banner hiện tại</label>
+                                <div class="position-relative rounded-4 overflow-hidden shadow-sm" style="max-height: 220px;">
+                                    <img src="@Model.BannerUrl" alt="Banner hiện tại" class="w-100 object-fit-cover" style="height: 200px;" onerror="this.src='/images/samflora/editorial-2.jpg';" />
+                                    <div class="position-absolute bottom-0 start-0 end-0 p-3 bg-dark bg-opacity-75 text-white">
+                                        <div class="fw-bold">@Model.BannerTitle</div>
+                                        <div class="small opacity-75">@Model.BannerSubtitle</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Tiêu đề lớn trên Banner</label>
+                            @Html.TextBoxFor(m => m.BannerTitle, new { @class = "form-control rounded-3" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Dòng mô tả phụ trên Banner</label>
+                            @Html.TextBoxFor(m => m.BannerSubtitle, new { @class = "form-control rounded-3" })
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-dark">Tải ảnh mới thay thế (Nếu có)</label>
+                            <input type="file" name="bannerImage" class="form-control rounded-3" accept="image/*" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-dark">Hoặc link URL ảnh trực tiếp</label>
+                            @Html.TextBoxFor(m => m.BannerUrl, new { @class = "form-control rounded-3" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Voucher & Theme & Submit -->
+        <div class="col-lg-4">
+            <!-- Thẻ Voucher & Giảm giá -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+                        <i class="bi bi-ticket-perforated-fill text-danger"></i> Voucher Khuyến Mãi
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Mã Voucher gắn kèm</label>
+                        @Html.TextBoxFor(m => m.CouponCode, new { @class = "form-control rounded-3 text-uppercase font-monospace fw-bold" })
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-semibold text-dark">Phần trăm giảm giá (%)</label>
+                        @Html.TextBoxFor(m => m.DiscountPercent, new { @class = "form-control rounded-3", type = "number", min = "0", max = "100" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ Giao diện & Màu sắc -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h6 class="fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+                        <i class="bi bi-palette-fill text-danger"></i> Màu sắc Chủ Đạo (Theme)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <label class="form-label small fw-semibold text-dark">Mã màu nhận diện thương hiệu dịp lễ</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="color" id="colorPicker" class="form-control form-control-color rounded-3 border" value="@Model.ThemeColor" title="Chọn màu" onchange="document.getElementById('themeColorInput').value = this.value;" />
+                        @Html.TextBoxFor(m => m.ThemeColor, new { @class = "form-control rounded-3 font-monospace", id = "themeColorInput", onchange = "document.getElementById('colorPicker').value = this.value;" })
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Gợi ý màu lễ hội:
+                        <div class="d-flex gap-2 mt-1">
+                            <span class="badge border text-white p-2" style="background:#881337;cursor:pointer" onclick="setTheme('#881337')">20/11</span>
+                            <span class="badge border text-white p-2" style="background:#15803d;cursor:pointer" onclick="setTheme('#15803d')">Noel</span>
+                            <span class="badge border text-white p-2" style="background:#d97706;cursor:pointer" onclick="setTheme('#d97706')">Tết</span>
+                            <span class="badge border text-white p-2" style="background:#ec4899;cursor:pointer" onclick="setTheme('#ec4899')">Valentine</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thẻ Trạng thái & Lưu -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="form-check form-switch mb-3">
+                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", role = "switch", id = "isActiveSwitch" })
+                        <label class="form-check-label fw-bold text-dark" for="isActiveSwitch">
+                            Kích hoạt chiến dịch
+                        </label>
+                        <div class="small text-muted">Nếu bật, hệ thống sẽ tự động hiển thị khi đến ngày áp dụng.</div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger rounded-pill py-2 fw-semibold shadow-sm">
+                            <i class="bi bi-save me-1"></i> Lưu thay đổi
+                        </button>
+                        <a href="@Url.Action("Index")" class="btn btn-light rounded-pill py-2 border text-muted">
+                            <i class="bi bi-x-lg me-1"></i> Hủy bỏ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    function setTheme(hex) {
+        document.getElementById('themeColorInput').value = hex;
+        document.getElementById('colorPicker').value = hex;
+    }
+</script>

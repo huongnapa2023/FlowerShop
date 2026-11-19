@@ -1,0 +1,167 @@
+@model FlowerShop.Models.MenuItem
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Chỉnh sửa Mục Menu: " + Model.Name + " - CHAM Flowers CMS";
+}
+
+<div class="mb-4">
+    <a href="@Url.Action("Index", "Menu")" class="text-decoration-none text-muted small">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại Danh sách Menu
+    </a>
+    <h4 class="fw-bold mt-2"><i class="bi bi-pencil-square text-danger me-2"></i>Chỉnh Sửa Mục Menu: "@Model.Name"</h4>
+    <p class="text-muted small">Thay đổi tên, liên kết đường dẫn, thứ tự hoặc biểu tượng của mục menu này.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="admin-card p-4">
+            @using (Html.BeginForm("Edit", "Menu", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Id)
+                @Html.HiddenFor(m => m.CreatedAt)
+                @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+
+                <!-- Gợi ý chọn nhanh các trang có sẵn -->
+                <div class="p-3 bg-light rounded-4 border mb-4">
+                    <div class="fw-bold small text-dark mb-2">
+                        <i class="bi bi-magic text-danger me-1"></i> Bấm để chọn nhanh các trang phổ biến có sẵn:
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Trang chủ', '/', 'bi-house-door', '')">
+                            <i class="bi bi-house-door me-1"></i> Trang chủ
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Sản phẩm hoa', '/Product', 'bi-flower1', '')">
+                            <i class="bi bi-flower1 me-1"></i> Sản phẩm hoa
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Hot Deal', '/HotDeal', 'bi-fire', 'HOT')">
+                            <i class="bi bi-fire text-danger me-1"></i> Hot Deal (HOT)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Giỏ hàng', '/Order/Cart', 'bi-bag-heart', '')">
+                            <i class="bi bi-bag-heart me-1"></i> Giỏ hàng
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Tin tức & Cẩm nang', '/Home/News', 'bi-newspaper', '')">
+                            <i class="bi bi-newspaper me-1"></i> Tin tức
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Giới thiệu', '/Home/About', 'bi-info-circle', '')">
+                            <i class="bi bi-info-circle me-1"></i> Giới thiệu
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white border rounded-pill shadow-xs" onclick="setPreset('Lịch sử đơn hàng', '/Account/History', 'bi-clock-history', '')">
+                            <i class="bi bi-clock-history me-1"></i> Lịch sử đơn
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Tên hiển thị trên Menu <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "Ví dụ: Trang chủ, Hoa Khai Trương, Giỏ hàng...", id = "txtMenuName", required = "required" })
+                    @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Đường dẫn liên kết (URL) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-link-45deg"></i></span>
+                        @Html.TextBoxFor(m => m.Url, new { @class = "form-control", placeholder = "Ví dụ: / hoặc /Product hoặc /Order/Cart hoặc https://...", id = "txtMenuUrl", required = "required" })
+                    </div>
+                    <div class="form-text small">
+                        - Đường dẫn nội bộ bắt đầu bằng dấu gạch chéo <code>/</code> (ví dụ: <code>/Product</code>, <code>/Order/Cart</code>).<br />
+                        - Hoặc đường dẫn trang web ngoài bắt đầu bằng <code>https://...</code>
+                    </div>
+                    @Html.ValidationMessageFor(m => m.Url, "", new { @class = "text-danger small" })
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small">Mã Icon Bootstrap (Tùy chọn)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light" id="previewIconBox"><i class="bi @(string.IsNullOrEmpty(Model.Icon) ? "bi-star" : Model.Icon)"></i></span>
+                            @Html.TextBoxFor(m => m.Icon, new { @class = "form-control", placeholder = "Ví dụ: bi-fire, bi-flower1, bi-bag-heart...", id = "txtMenuIcon" })
+                        </div>
+                        <div class="form-text small">Ví dụ: <code>bi-house-door</code>, <code>bi-fire</code>, <code>bi-flower1</code>, <code>bi-bag-heart</code></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Huy hiệu (Badge)</label>
+                        @Html.TextBoxFor(m => m.BadgeText, new { @class = "form-control", placeholder = "HOT, NEW, SALE...", id = "txtBadgeText" })
+                        <div class="form-text small">Để trống nếu không có</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Màu huy hiệu</label>
+                        @Html.DropDownListFor(m => m.BadgeColor, new List<SelectListItem>
+                        {
+                            new SelectListItem { Text = "Đỏ (danger)", Value = "danger", Selected = (Model.BadgeColor == "danger") },
+                            new SelectListItem { Text = "Cam vàng (warning)", Value = "warning", Selected = (Model.BadgeColor == "warning") },
+                            new SelectListItem { Text = "Xanh lá (success)", Value = "success", Selected = (Model.BadgeColor == "success") },
+                            new SelectListItem { Text = "Xanh lam (primary)", Value = "primary", Selected = (Model.BadgeColor == "primary") },
+                            new SelectListItem { Text = "Xanh ngọc (info)", Value = "info", Selected = (Model.BadgeColor == "info") }
+                        }, new { @class = "form-select" })
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">Thứ tự hiển thị</label>
+                        @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0" })
+                        <div class="form-text small">Số nhỏ hơn sẽ đứng trước</div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center pt-3">
+                        <div class="form-check form-switch">
+                            @Html.CheckBoxFor(m => m.OpenNewTab, new { @class = "form-check-input", role = "switch", id = "switchNewTab" })
+                            <label class="form-check-label fw-semibold small" for="switchNewTab">Mở trong tab mới (_blank)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center pt-3">
+                        <div class="form-check form-switch">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", role = "switch", id = "switchIsActive" })
+                            <label class="form-check-label fw-semibold small text-success" for="switchIsActive">Hiển thị trên website</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="@Url.Action("Index", "Menu")" class="btn btn-light rounded-pill px-4">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-danger rounded-pill px-5">
+                        <i class="bi bi-check-circle me-1"></i> Cập Nhật Mục Menu
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Cột hướng dẫn bên phải -->
+    <div class="col-lg-4">
+        <div class="admin-card p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-question-circle text-primary me-2"></i>Hướng dẫn nhanh</h6>
+            <div class="small text-muted space-y-2">
+                <p><strong>- Đổi thứ tự:</strong> Nhập số thứ tự mong muốn (ví dụ 1, 2, 3...) hoặc sử dụng nút mũi tên ▲ ▼ ở màn hình danh sách.</p>
+                <p><strong>- Ẩn tạm thời:</strong> Bỏ tích ô <em>"Hiển thị trên website"</em> nếu bạn muốn tạm ẩn menu mà không cần xóa đi.</p>
+                <p><strong>- Gắn link sản phẩm theo bộ lọc:</strong> Bạn có thể dán đường dẫn kèm tham số, ví dụ <code>/Product?sort=bestseller</code> để dẫn khách thẳng vào danh sách hoa bán chạy!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setPreset(name, url, icon, badge) {
+            document.getElementById('txtMenuName').value = name;
+            document.getElementById('txtMenuUrl').value = url;
+            document.getElementById('txtMenuIcon').value = icon;
+            document.getElementById('txtBadgeText').value = badge;
+            updateIconPreview(icon);
+        }
+
+        function updateIconPreview(icon) {
+            var box = document.getElementById('previewIconBox');
+            if (box) {
+                box.innerHTML = '<i class="bi ' + (icon || 'bi-star') + '"></i>';
+            }
+        }
+
+        document.getElementById('txtMenuIcon').addEventListener('input', function () {
+            updateIconPreview(this.value.trim());
+        });
+    </script>
+}

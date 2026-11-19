@@ -1,0 +1,130 @@
+@model PagedList.IPagedList<FlowerShop.Models.Product>
+@{
+    ViewData["Title"] = "Danh mục sản phẩm hoa tươi";
+    var categories = ViewBag.Categories as List<FlowerShop.Models.Category> ?? new List<FlowerShop.Models.Category>();
+    var flowerCategories = ViewBag.FlowerCategories as List<FlowerShop.Models.FlowerCategory> ?? new List<FlowerShop.Models.FlowerCategory>();
+    int? selCat = ViewBag.CategoryId;
+    int? selFlowerCat = ViewBag.FlowerCategoryId;
+    string search = ViewBag.Search;
+    decimal? minPrice = ViewBag.MinPrice;
+    decimal? maxPrice = ViewBag.MaxPrice;
+    string sortOrder = ViewBag.SortOrder;
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Bộ lọc bên trái -->
+        <div class="col-lg-3">
+            <div class="bg-white p-4 rounded-4 border shadow-sm sticky-top" style="top:86px">
+                <h5 class="fw-bold mb-3"><i class="bi bi-sliders text-danger me-2"></i>Bộ Lọc Tìm Hoa</h5>
+                <form action="@Url.Action("Index", "Product")" method="get">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Từ khóa tên hoa</label>
+                        <input type="text" name="search" value="@search" class="form-control form-control-sm rounded-3" placeholder="VD: Hồng Trà, Lan..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chủ đề / Dịp tặng</label>
+                        <select name="categoryId" class="form-select form-select-sm rounded-3">
+                            <option value="">-- Tất cả danh mục --</option>
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c.Id" @Html.Raw(selCat == c.Id ? "selected=\"selected\"" : "")>@c.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chủng loại hoa</label>
+                        <select name="flowerCategoryId" class="form-select form-select-sm rounded-3">
+                            <option value="">-- Tất cả loài hoa --</option>
+                            @foreach (var fc in flowerCategories)
+                            {
+                                <option value="@fc.Id" @Html.Raw(selFlowerCat == fc.Id ? "selected=\"selected\"" : "")>@fc.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Khoảng giá (VNĐ)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" name="minPrice" value="@minPrice" step="50000" min="0" class="form-control form-control-sm" placeholder="Từ" />
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="maxPrice" value="@maxPrice" step="50000" min="0" class="form-control form-control-sm" placeholder="Đến" />
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1 mt-2">
+                            <a href="@Url.Action("Index", "Product", new { maxPrice = 600000 })" class="badge bg-light text-dark border text-decoration-none">&lt; 600K</a>
+                            <a href="@Url.Action("Index", "Product", new { minPrice = 600000, maxPrice = 1200000 })" class="badge bg-light text-dark border text-decoration-none">600K - 1.2M</a>
+                            <a href="@Url.Action("Index", "Product", new { minPrice = 1200000 })" class="badge bg-light text-dark border text-decoration-none">&gt; 1.2M</a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Sắp xếp theo</label>
+                        <select name="sortOrder" class="form-select form-select-sm rounded-3">
+                            <option value="" @Html.Raw(string.IsNullOrEmpty(sortOrder) ? "selected=\"selected\"" : "")>Mới nhất</option>
+                            <option value="featured" @Html.Raw(sortOrder == "featured" ? "selected=\"selected\"" : "")>Nổi bật nhất</option>
+                            <option value="price_asc" @Html.Raw(sortOrder == "price_asc" ? "selected=\"selected\"" : "")>Giá tăng dần</option>
+                            <option value="price_desc" @Html.Raw(sortOrder == "price_desc" ? "selected=\"selected\"" : "")>Giá giảm dần</option>
+                            <option value="name_asc" @Html.Raw(sortOrder == "name_asc" ? "selected=\"selected\"" : "")>Tên A → Z</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-nt-primary btn-sm"><i class="bi bi-funnel-fill me-1"></i> Áp dụng lọc</button>
+                        <a href="@Url.Action("Index", "Product")" class="btn btn-light border btn-sm rounded-pill">Đặt lại bộ lọc</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Danh sách sản phẩm -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="h4 fw-bold mb-0">Bộ Sưu Tập Hoa Tươi CHAM Flowers</h1>
+                    <div class="text-muted small">Tìm thấy <strong>@Model.TotalItemCount</strong> mẫu hoa phù hợp</div>
+                </div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="bg-white p-5 rounded-4 border text-center">
+                    <i class="bi bi-search text-muted display-4"></i>
+                    <h5 class="fw-bold mt-3">Không tìm thấy sản phẩm phù hợp</h5>
+                    <p class="text-muted small">Vui lòng thử từ khóa hoặc khoảng giá khác để xem thêm mẫu hoa tại CHAM Flowers.</p>
+                    <a href="@Url.Action("Index", "Product")" class="btn btn-nt-outline btn-sm">Xem toàn bộ sản phẩm</a>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var p in Model)
+                    {
+                        <div class="col-sm-6 col-md-4">
+                            @Html.Partial("_ProductCard", p)
+                        </div>
+                    }
+                </div>
+
+                if (Model.PageCount > 1)
+                {
+                    <nav class="mt-4 d-flex justify-content-center">
+                        <ul class="pagination">
+                            @for (int i = 1; i <= Model.PageCount; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link"
+                                       href="@Url.Action("Index", "Product", new { page = i, search = search, categoryId = selCat, flowerCategoryId = selFlowerCat, minPrice = minPrice, maxPrice = maxPrice, sortOrder = sortOrder })">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>

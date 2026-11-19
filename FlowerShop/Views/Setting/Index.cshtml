@@ -1,0 +1,336 @@
+@model FlowerShop.Models.SiteSetting
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Tuỳ biến Header & Footer Website";
+}
+
+<!-- Thanh công cụ nhanh -->
+<div class="admin-card p-3 px-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-danger rounded-pill px-3 py-2"><i class="bi bi-palette2 me-1"></i>Theme Customizer</span>
+        <span class="small text-muted">Cập nhật lần cuối: <strong>@Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</strong></span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="@Url.Action("Index", "Home")" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Xem Website Thực Tế
+        </a>
+        <a href="@Url.Action("Index", "Menu")" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-menu-button-wide me-1"></i> Sửa Các Mục Menu
+        </a>
+        @using (Html.BeginForm("ResetDefault", "Setting", FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Bạn có chắc muốn khôi phục toàn bộ Header & Footer về mặc định ban đầu?');" }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Khôi phục mặc định
+            </button>
+        }
+    </div>
+</div>
+
+@using (Html.BeginForm("Save", "Setting", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+
+    <!-- ==================== PHẦN 1: TUỲ BIẾN HEADER & THANH TOPBAR ==================== -->
+    <div class="admin-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4 flex-wrap gap-2">
+            <div>
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-layout-Three-columns text-danger me-2"></i>1. Tuỳ Biến Giao Diện Header & Thanh Topbar</h6>
+                <span class="text-muted small">Chỉnh sửa Logo, Hotline, câu thông báo khuyến mãi đầu trang, màu sắc và ẩn/hiện các tiện ích</span>
+            </div>
+            <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-save me-1"></i> Lưu Thay Đổi
+            </button>
+        </div>
+
+        <!-- Khung Live Preview Header -->
+        <div class="mb-4">
+            <div class="small fw-bold text-muted mb-2"><i class="bi bi-eye-fill text-danger me-1"></i>XEM TRƯỚC HEADER TRỰC TIẾP (LIVE PREVIEW):</div>
+            <div class="rounded-4 overflow-hidden border shadow-sm">
+                <!-- Preview Topbar -->
+                <div id="prevTopbar" class="px-3 py-2 text-white small d-flex justify-content-between align-items-center" style="background: @Model.TopbarBgColor">
+                    <div>
+                        <i class="bi bi-flower1 me-1"></i>
+                        <span id="prevTopbarText">@Model.DefaultTopbarText</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="prevHotDealBtn"><i class="bi bi-lightning-charge-fill text-warning"></i> Ưu đãi hôm nay |</span>
+                        <span><i class="bi bi-telephone-fill me-1"></i> Hotline: <strong id="prevHotline">@Model.Hotline</strong></span>
+                    </div>
+                </div>
+                <!-- Preview Main Header -->
+                <div id="prevHeader" class="px-4 py-3 d-flex justify-content-between align-items-center border-top" style="background: @Model.HeaderBgColor">
+                    <div class="d-flex align-items-center gap-3">
+                        <img id="prevHeaderLogo" src="@Model.LogoUrl" alt="Logo" style="height:40px;object-fit:contain" />
+                        <div class="d-none d-md-flex gap-3 small fw-semibold text-dark ms-3">
+                            <span>Trang chủ</span>
+                            <span>Sản phẩm hoa</span>
+                            <span class="text-danger">Hot Deal</span>
+                            <span>Tin tức</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div id="prevSearchBox" class="px-3 py-1 rounded-pill border bg-light small text-muted">
+                            <i class="bi bi-search me-1"></i> Tìm hoa tươi...
+                        </div>
+                        <span class="badge bg-danger rounded-pill px-3 py-2"><i class="bi bi-bag-heart-fill me-1"></i> Giỏ hàng (0)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Tên thương hiệu (Shop Name)</label>
+                @Html.TextBoxFor(m => m.ShopName, new { @class = "form-control" })
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Số Hotline hiển thị trên Header</label>
+                @Html.TextBoxFor(m => m.Hotline, new { @class = "form-control fw-bold text-danger", id = "inpHotline", oninput = "updateThemePreview()" })
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Màu nền Thanh Topbar</label>
+                <div class="input-group">
+                    <input type="color" id="pickTopbarBg" class="form-control form-control-color" value="@Model.TopbarBgColor" onchange="document.getElementById('inpTopbarBg').value=this.value;updateThemePreview()" />
+                    @Html.TextBoxFor(m => m.TopbarBgColor, new { @class = "form-control font-monospace", id = "inpTopbarBg", oninput = "document.getElementById('pickTopbarBg').value=this.value;updateThemePreview()" })
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <label class="form-label small fw-bold">Dòng chữ thông báo mặc định trên Topbar (Khi không có chiến dịch lễ hội)</label>
+                @Html.TextBoxFor(m => m.DefaultTopbarText, new { @class = "form-control", id = "inpTopbarText", oninput = "updateThemePreview()" })
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Màu nền Khung Header chính</label>
+                <div class="input-group">
+                    <input type="color" id="pickHeaderBg" class="form-control form-control-color" value="@Model.HeaderBgColor" onchange="document.getElementById('inpHeaderBg').value=this.value;updateThemePreview()" />
+                    @Html.TextBoxFor(m => m.HeaderBgColor, new { @class = "form-control font-monospace", id = "inpHeaderBg", oninput = "document.getElementById('pickHeaderBg').value=this.value;updateThemePreview()" })
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Tải ảnh Logo Header mới</label>
+                <input type="file" name="headerLogoFile" class="form-control" accept="image/*" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Hoặc đường dẫn URL Logo Header</label>
+                @Html.TextBoxFor(m => m.LogoUrl, new { @class = "form-control", id = "inpHeaderLogo", oninput = "updateThemePreview()" })
+            </div>
+
+            <div class="col-12 mt-3">
+                <div class="p-3 rounded-3 bg-light border d-flex flex-wrap gap-4">
+                    <div class="form-check form-switch">
+                        @Html.CheckBoxFor(m => m.ShowTopbar, new { @class = "form-check-input", role = "switch", id = "chkShowTopbar", onchange = "updateThemePreview()" })
+                        <label class="form-check-label small fw-bold" for="chkShowTopbar">Hiển thị Thanh Topbar trên cùng</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        @Html.CheckBoxFor(m => m.ShowSearchBar, new { @class = "form-check-input", role = "switch", id = "chkShowSearch", onchange = "updateThemePreview()" })
+                        <label class="form-check-label small fw-bold" for="chkShowSearch">Hiển thị Ô tìm kiếm hoa trên Header</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        @Html.CheckBoxFor(m => m.ShowHotDealButton, new { @class = "form-check-input", role = "switch", id = "chkShowHotDeal", onchange = "updateThemePreview()" })
+                        <label class="form-check-label small fw-bold" for="chkShowHotDeal">Hiển thị nút "Ưu đãi hôm nay" mở Popup</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        @Html.CheckBoxFor(m => m.ShowFloatingChat, new { @class = "form-check-input", role = "switch", id = "chkShowChat" })
+                        <label class="form-check-label small fw-bold" for="chkShowChat">Hiển thị nút Chat CSKH nổi góc phải</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PHẦN 2: TUỲ BIẾN FOOTER (CHÂN TRANG) ==================== -->
+    <div class="admin-card p-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4 flex-wrap gap-2">
+            <div>
+                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-window-dock text-danger me-2"></i>2. Tuỳ Biến Giao Diện Footer (Chân Trang)</h6>
+                <span class="text-muted small">Chỉnh sửa thông tin liên hệ, mô tả thương hiệu, các cột liên kết điều hướng, mạng xã hội và bản quyền</span>
+            </div>
+            <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-save me-1"></i> Lưu Thay Đổi
+            </button>
+        </div>
+
+        <!-- Khung Live Preview Footer -->
+        <div class="mb-4">
+            <div class="small fw-bold text-muted mb-2"><i class="bi bi-eye-fill text-danger me-1"></i>XEM TRƯỚC FOOTER TRỰC TIẾP (LIVE PREVIEW):</div>
+            <div id="prevFooter" class="p-4 rounded-4 shadow-sm" style="background: @Model.FooterBgColor; color: @Model.FooterTextColor;">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <img id="prevFooterLogo" src="@Model.FooterLogoUrl" alt="Footer Logo" style="height:40px;object-fit:contain" class="mb-2" />
+                        <p id="prevFooterAbout" class="small opacity-75 mb-2">@Model.FooterAbout</p>
+                        <div class="small opacity-75">
+                            <div><i class="bi bi-geo-alt-fill text-danger me-2"></i><span id="prevAddress">@Model.Address</span></div>
+                            <div><i class="bi bi-telephone-fill text-danger me-2"></i>Hotline: <span id="prevFooterPhone">@Model.Hotline • @Model.SecondaryPhone</span></div>
+                            <div><i class="bi bi-envelope-fill text-danger me-2"></i><span id="prevEmail">@Model.Email</span></div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 id="prevCol1Title" class="fw-bold mb-2">@Model.FooterCol1Title</h6>
+                        <ul id="prevCol1List" class="list-unstyled small opacity-75 d-grid gap-1 mb-0"></ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 id="prevCol2Title" class="fw-bold mb-2">@Model.FooterCol2Title</h6>
+                        <ul id="prevCol2List" class="list-unstyled small opacity-75 d-grid gap-1 mb-0"></ul>
+                    </div>
+                </div>
+                <hr class="border-secondary my-3" />
+                <div id="prevCopyright" class="text-center small opacity-75">@Model.CopyrightText</div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Thông tin thương hiệu & Liên hệ -->
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Tải ảnh Logo Footer mới</label>
+                <input type="file" name="footerLogoFile" class="form-control" accept="image/*" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Hoặc đường dẫn URL Logo Footer</label>
+                @Html.TextBoxFor(m => m.FooterLogoUrl, new { @class = "form-control", id = "inpFooterLogo", oninput = "updateThemePreview()" })
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Màu nền Footer</label>
+                <div class="input-group">
+                    <input type="color" id="pickFooterBg" class="form-control form-control-color" value="@Model.FooterBgColor" onchange="document.getElementById('inpFooterBg').value=this.value;updateThemePreview()" />
+                    @Html.TextBoxFor(m => m.FooterBgColor, new { @class = "form-control font-monospace", id = "inpFooterBg", oninput = "document.getElementById('pickFooterBg').value=this.value;updateThemePreview()" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Màu chữ Footer</label>
+                <div class="input-group">
+                    <input type="color" id="pickFooterText" class="form-control form-control-color" value="@Model.FooterTextColor" onchange="document.getElementById('inpFooterText').value=this.value;updateThemePreview()" />
+                    @Html.TextBoxFor(m => m.FooterTextColor, new { @class = "form-control font-monospace", id = "inpFooterText", oninput = "document.getElementById('pickFooterText').value=this.value;updateThemePreview()" })
+                </div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label small fw-bold">Đoạn giới thiệu thương hiệu (Cột 1 Footer)</label>
+                @Html.TextAreaFor(m => m.FooterAbout, new { @class = "form-control", rows = "2", id = "inpFooterAbout", oninput = "updateThemePreview()" })
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Địa chỉ Showroom / Cửa hàng</label>
+                @Html.TextBoxFor(m => m.Address, new { @class = "form-control", id = "inpAddress", oninput = "updateThemePreview()" })
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Số điện thoại phụ / Zalo</label>
+                @Html.TextBoxFor(m => m.SecondaryPhone, new { @class = "form-control", id = "inpSecPhone", oninput = "updateThemePreview()" })
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Email CSKH</label>
+                @Html.TextBoxFor(m => m.Email, new { @class = "form-control", id = "inpEmail", oninput = "updateThemePreview()" })
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Giờ mở cửa hoạt động</label>
+                @Html.TextBoxFor(m => m.WorkingHours, new { @class = "form-control" })
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Dòng bản quyền (Copyright dưới cùng)</label>
+                @Html.TextBoxFor(m => m.CopyrightText, new { @class = "form-control", id = "inpCopyright", oninput = "updateThemePreview()" })
+            </div>
+
+            <!-- Cột liên kết 1 & 2 -->
+            <div class="col-md-6 mt-4">
+                <div class="p-3 rounded-4 border bg-light h-100">
+                    <label class="form-label small fw-bold text-danger">Tiêu đề Cột Liên Kết 1</label>
+                    @Html.TextBoxFor(m => m.FooterCol1Title, new { @class = "form-control mb-2 fw-bold", id = "inpCol1Title", oninput = "updateThemePreview()" })
+                    <label class="form-label small fw-semibold text-muted">Danh sách Link Cột 1 (Mỗi dòng: <code>Tên hiển thị | Đường dẫn</code>)</label>
+                    @Html.TextAreaFor(m => m.FooterCol1Links, new { @class = "form-control font-monospace small", rows = "4", id = "inpCol1Links", oninput = "updateThemePreview()" })
+                </div>
+            </div>
+
+            <div class="col-md-6 mt-4">
+                <div class="p-3 rounded-4 border bg-light h-100">
+                    <label class="form-label small fw-bold text-danger">Tiêu đề Cột Liên Kết 2</label>
+                    @Html.TextBoxFor(m => m.FooterCol2Title, new { @class = "form-control mb-2 fw-bold", id = "inpCol2Title", oninput = "updateThemePreview()" })
+                    <label class="form-label small fw-semibold text-muted">Danh sách Link Cột 2 (Mỗi dòng: <code>Tên hiển thị | Đường dẫn</code>)</label>
+                    @Html.TextAreaFor(m => m.FooterCol2Links, new { @class = "form-control font-monospace small", rows = "4", id = "inpCol2Links", oninput = "updateThemePreview()" })
+                </div>
+            </div>
+
+            <!-- Mạng xã hội -->
+            <div class="col-md-3 mt-3">
+                <label class="form-label small fw-bold"><i class="bi bi-facebook text-primary me-1"></i>Link Facebook</label>
+                @Html.TextBoxFor(m => m.FacebookUrl, new { @class = "form-control form-control-sm", placeholder = "https://facebook.com/..." })
+            </div>
+            <div class="col-md-3 mt-3">
+                <label class="form-label small fw-bold"><i class="bi bi-instagram text-danger me-1"></i>Link Instagram</label>
+                @Html.TextBoxFor(m => m.InstagramUrl, new { @class = "form-control form-control-sm", placeholder = "https://instagram.com/..." })
+            </div>
+            <div class="col-md-3 mt-3">
+                <label class="form-label small fw-bold"><i class="bi bi-chat-dots-fill text-info me-1"></i>Link Zalo OA</label>
+                @Html.TextBoxFor(m => m.ZaloUrl, new { @class = "form-control form-control-sm", placeholder = "https://zalo.me/..." })
+            </div>
+            <div class="col-md-3 mt-3">
+                <label class="form-label small fw-bold"><i class="bi bi-tiktok text-dark me-1"></i>Link TikTok</label>
+                @Html.TextBoxFor(m => m.TikTokUrl, new { @class = "form-control form-control-sm", placeholder = "https://tiktok.com/..." })
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-top text-end">
+            <button type="submit" class="btn btn-danger rounded-pill px-5 py-2 fw-bold shadow">
+                <i class="bi bi-check-circle-fill me-1"></i> Lưu Toàn Bộ Cấu Hình Header & Footer
+            </button>
+        </div>
+    </div>
+}
+
+<script>
+    function parseLinksPreview(rawText) {
+        if (!rawText) return '';
+        var lines = rawText.split('\n');
+        var html = '';
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            var parts = line.split('|');
+            var label = parts[0] ? parts[0].trim() : line;
+            html += '<li>' + label + '</li>';
+        }
+        return html;
+    }
+
+    function updateThemePreview() {
+        var topbar = document.getElementById('prevTopbar');
+        var showTopbar = document.getElementById('chkShowTopbar').checked;
+        topbar.style.display = showTopbar ? 'flex' : 'none';
+        topbar.style.backgroundColor = document.getElementById('inpTopbarBg').value || '#881337';
+
+        document.getElementById('prevTopbarText').textContent = document.getElementById('inpTopbarText').value;
+        var hotline = document.getElementById('inpHotline').value;
+        document.getElementById('prevHotline').textContent = hotline;
+
+        var showHotDeal = document.getElementById('chkShowHotDeal').checked;
+        document.getElementById('prevHotDealBtn').style.display = showHotDeal ? 'inline' : 'none';
+
+        var header = document.getElementById('prevHeader');
+        header.style.backgroundColor = document.getElementById('inpHeaderBg').value || '#ffffff';
+        document.getElementById('prevHeaderLogo').src = document.getElementById('inpHeaderLogo').value || '/images/logo-cham.svg';
+
+        var showSearch = document.getElementById('chkShowSearch').checked;
+        document.getElementById('prevSearchBox').style.display = showSearch ? 'block' : 'none';
+
+        var footer = document.getElementById('prevFooter');
+        footer.style.backgroundColor = document.getElementById('inpFooterBg').value || '#0f172a';
+        footer.style.color = document.getElementById('inpFooterText').value || '#f8fafc';
+        document.getElementById('prevFooterLogo').src = document.getElementById('inpFooterLogo').value || '/images/logo-cham-white.svg';
+        document.getElementById('prevFooterAbout').textContent = document.getElementById('inpFooterAbout').value;
+        document.getElementById('prevAddress').textContent = document.getElementById('inpAddress').value;
+        var secPhone = document.getElementById('inpSecPhone').value;
+        document.getElementById('prevFooterPhone').textContent = hotline + (secPhone ? ' • ' + secPhone : '');
+        document.getElementById('prevEmail').textContent = document.getElementById('inpEmail').value;
+        document.getElementById('prevCopyright').textContent = document.getElementById('inpCopyright').value;
+
+        document.getElementById('prevCol1Title').textContent = document.getElementById('inpCol1Title').value;
+        document.getElementById('prevCol1List').innerHTML = parseLinksPreview(document.getElementById('inpCol1Links').value);
+
+        document.getElementById('prevCol2Title').textContent = document.getElementById('inpCol2Title').value;
+        document.getElementById('prevCol2List').innerHTML = parseLinksPreview(document.getElementById('inpCol2Links').value);
+    }
+
+    document.addEventListener('DOMContentLoaded', updateThemePreview);
+</script>

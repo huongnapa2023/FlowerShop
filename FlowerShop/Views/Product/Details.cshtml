@@ -1,0 +1,202 @@
+@model FlowerShop.Models.ProductDetailViewModel
+@{
+    var p = Model.Product;
+    ViewData["Title"] = p.Name;
+}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Product")">Sản phẩm</a></li>
+            @if (p.Category != null)
+            {
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Product", new { categoryId = p.CategoryId })">@p.Category.Name</a></li>
+            }
+            <li class="breadcrumb-item active">@p.Name</li>
+        </ol>
+    </nav>
+
+    <div class="bg-white p-4 p-lg-5 rounded-4 border shadow-sm mb-5">
+        <div class="row g-5">
+            <!-- Gallery Hình ảnh sản phẩm -->
+            <div class="col-lg-5">
+                <div class="rounded-4 overflow-hidden border bg-light mb-3">
+                    <img id="mainProductImg" src="@p.MainImageUrl" class="w-100" style="aspect-ratio:1/1.05;object-fit:cover" alt="@p.Name" />
+                </div>
+                @if (p.Images.Count > 1)
+                {
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var img in p.Images.OrderByDescending(i => i.IsMain))
+                        {
+                            <img src="@img.ImageUrl"
+                                 onclick="document.getElementById('mainProductImg').src=this.src"
+                                 class="rounded-3 border"
+                                 style="width:74px;height:74px;object-fit:cover;cursor:pointer"
+                                 alt="Gallery" />
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Thông tin sản phẩm -->
+            <div class="col-lg-7">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    @if (p.Category != null)
+                    {
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">@p.Category.Name</span>
+                    }
+                    @if (p.FlowerCategory != null)
+                    {
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-1">@p.FlowerCategory.Name</span>
+                    }
+                    @if (p.IsHotDeal)
+                    {
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1"><i class="bi bi-fire"></i> Hot Deal</span>
+                    }
+                </div>
+
+                <h1 class="h2 fw-bold mb-2">@p.Name</h1>
+
+                <div class="d-flex align-items-center gap-3 mb-3 small">
+                    <span class="text-warning fw-bold"><i class="bi bi-star-fill"></i> @p.AverageRating.ToString("0.0") / 5.0</span>
+                    <span class="text-muted">(@Model.ApprovedReviews.Count đánh giá đã duyệt)</span>
+                    <span>•</span>
+                    @if (p.StockQuantity > 0)
+                    {
+                        <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Còn hàng (@p.StockQuantity sản phẩm)</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Tạm hết hàng</span>
+                    }
+                </div>
+
+                <div class="p-3 rounded-4 bg-danger-subtle bg-opacity-50 mb-4 d-flex align-items-baseline gap-3">
+                    <span class="h2 fw-bold text-danger mb-0">@AppHelpers.FormatVnd(p.Price)</span>
+                    @if (p.OriginalPrice.HasValue && p.OriginalPrice > p.Price)
+                    {
+                        <span class="text-muted text-decoration-line-through fs-5">@AppHelpers.FormatVnd(p.OriginalPrice.Value)</span>
+                        <span class="badge bg-danger">Tiết kiệm @p.DiscountPercent%</span>
+                    }
+                </div>
+
+                <p class="text-secondary lh-lg mb-4">@p.Description</p>
+
+                @if (p.StockQuantity > 0)
+                {
+                    <form action="@Url.Action("AddToCart", "Order")" method="post" class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                        <input type="hidden" name="productId" value="@p.Id" />
+                        <div class="input-group" style="width:135px">
+                            <button class="btn btn-outline-secondary js-qty-btn" type="button" data-step="-1">-</button>
+                            <input type="number" id="buyQty" name="quantity" value="1" min="1" max="@p.StockQuantity" class="form-control text-center fw-bold" />
+                            <button class="btn btn-outline-secondary js-qty-btn" type="button" data-step="1">+</button>
+                        </div>
+
+                        <button type="button" data-id="@p.Id" class="btn btn-nt-outline px-4 py-2 js-add-to-cart">
+                            <i class="bi bi-cart-plus me-1"></i> Thêm vào giỏ
+                        </button>
+
+                        <button type="submit" class="btn btn-nt-primary px-4 py-2">
+                            <i class="bi bi-bag-check-fill me-1"></i> Mua ngay
+                        </button>
+                    </form>
+                }
+
+                <div class="row g-2 small text-muted border-top pt-3">
+                    <div class="col-sm-6"><i class="bi bi-gift-fill text-danger me-2"></i>Tặng kèm thiệp hoặc banner chúc mừng</div>
+                    <div class="col-sm-6"><i class="bi bi-camera-fill text-danger me-2"></i>Chụp ảnh sản phẩm thực tế duyệt trước khi giao</div>
+                    <div class="col-sm-6"><i class="bi bi-clock-fill text-danger me-2"></i>Giao nhanh 90 - 120 phút nội thành</div>
+                    @if (p.Supplier != null)
+                    {
+                        <div class="col-sm-6"><i class="bi bi-award-fill text-danger me-2"></i>Nguồn hoa: @p.Supplier.Name</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Đánh giá sản phẩm -->
+    <div class="bg-white p-4 rounded-4 border shadow-sm mb-5">
+        <h4 class="fw-bold mb-4"><i class="bi bi-chat-square-quote-fill text-danger me-2"></i>Đánh Giá Từ Khách Hàng Đã Mua (@Model.ApprovedReviews.Count)</h4>
+
+        @if (Model.CanReview)
+        {
+            <div class="p-4 rounded-4 bg-light border mb-4">
+                <h6 class="fw-bold mb-2">Gửi đánh giá trải nghiệm của bạn</h6>
+                <form action="@Url.Action("Submit", "Review")" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@p.Id" />
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Mức độ hài lòng</label>
+                            <select name="rating" class="form-select">
+                                <option value="5">⭐⭐⭐⭐⭐ Tuyệt vời (5 sao)</option>
+                                <option value="4">⭐⭐⭐⭐ Rất tốt (4 sao)</option>
+                                <option value="3">⭐⭐⭐ Hài lòng (3 sao)</option>
+                                <option value="2">⭐⭐ Cần cải thiện (2 sao)</option>
+                                <option value="1">⭐ Không hài lòng (1 sao)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label small fw-semibold">Nhận xét chi tiết</label>
+                            <textarea name="content" rows="2" class="form-control" required placeholder="Chia sẻ cảm nhận về độ tươi của hoa và dịch vụ giao hàng CHAM Flowers..."></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-nt-primary btn-sm mt-3">Gửi đánh giá</button>
+                </form>
+            </div>
+        }
+        else if (User != null && User.Identity != null && User.Identity.IsAuthenticated && !Model.HasReviewed)
+        {
+            <div class="alert alert-light border small text-muted">
+                <i class="bi bi-info-circle me-1"></i> Theo chính sách đảm bảo đánh giá xác thực của CHAM Flowers, khách hàng có thể gửi đánh giá sau khi đơn hàng chứa sản phẩm này ở trạng thái <strong>Hoàn thành</strong>.
+            </div>
+        }
+
+        @if (!Model.ApprovedReviews.Any())
+        {
+            <p class="text-muted small mb-0">Chưa có đánh giá công khai nào cho mẫu hoa này.</p>
+        }
+        else
+        {
+            <div class="d-grid gap-3">
+                @foreach (var rev in Model.ApprovedReviews)
+                {
+                    <div class="p-3 rounded-4 border bg-light bg-opacity-50">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="fw-bold small">
+                                <i class="bi bi-person-check-fill text-success me-1"></i>@(rev.User != null ? rev.User.FullName : "Khách hàng")
+                                <span class="badge bg-success-subtle text-success ms-1">Đã mua hoa</span>
+                            </div>
+                            <span class="text-muted" style="font-size:0.75rem">@rev.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="text-warning small mb-1">
+                            @for (int s = 0; s < rev.Rating; s++)
+                            {
+                                <i class="bi bi-star-fill"></i>
+                            }
+                        </div>
+                        <div class="small text-dark">@rev.Content</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Sản phẩm liên quan -->
+    @if (Model.RelatedProducts.Any())
+    {
+        <section>
+            <h4 class="fw-bold mb-3">Mẫu Hoa Cùng Chủ Đề</h4>
+            <div class="row g-4">
+                @foreach (var rp in Model.RelatedProducts)
+                {
+                    <div class="col-sm-6 col-lg-3">
+                        @Html.Partial("_ProductCard", rp)
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>

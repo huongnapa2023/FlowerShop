@@ -1,0 +1,50 @@
+@model FlowerShop.Models.Product
+
+<div class="flower-card">
+    <div class="flower-img-wrap">
+        @if (Model.DiscountPercent > 0)
+        {
+            <span class="badge-discount">-@Model.DiscountPercent%</span>
+        }
+        @if (Model.IsHotDeal)
+        {
+            <span class="badge-hot"><i class="bi bi-fire"></i> Hot Deal</span>
+        }
+        <a href="@Url.Action("Details", "Product", new { id = Model.Id })">
+            <img src="@Model.MainImageUrl" alt="@Model.Name" loading="lazy" />
+        </a>
+    </div>
+    <div class="p-3 d-flex flex-column flex-grow-1">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted" style="font-size:0.76rem">@(Model.Category != null ? Model.Category.Name : "Hoa tươi nghệ thuật")</span>
+            <span class="text-warning small"><i class="bi bi-star-fill"></i> @Model.AverageRating.ToString("0.0")</span>
+        </div>
+        <h6 class="fw-bold mb-2 flex-grow-1">
+            <a href="@Url.Action("Details", "Product", new { id = Model.Id })" class="text-dark text-decoration-none">
+                @Model.Name
+            </a>
+        </h6>
+        <div class="mb-3">
+            <span class="flower-price">@AppHelpers.FormatVnd(Model.Price)</span>
+            @if (Model.OriginalPrice.HasValue && Model.OriginalPrice > Model.Price)
+            {
+                <span class="flower-old-price">@AppHelpers.FormatVnd(Model.OriginalPrice.Value)</span>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("Details", "Product", new { id = Model.Id })" class="btn btn-light border rounded-pill btn-sm flex-grow-1">
+                Chi tiết
+            </a>
+            @if (Model.StockQuantity > 0)
+            {
+                <button type="button" class="btn btn-nt-primary btn-sm flex-grow-1 js-add-to-cart" data-id="@Model.Id">
+                    <i class="bi bi-cart-plus me-1"></i> Thêm giỏ
+                </button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill flex-grow-1" disabled>Hết hàng</button>
+            }
+        </div>
+    </div>
+</div>

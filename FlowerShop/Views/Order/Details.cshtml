@@ -1,0 +1,116 @@
+﻿@model FlowerShop.Models.Order
+@using FlowerShop.Services
+@{
+    ViewBag.Title = string.Format("Chi tiết đơn hàng #{0} - CHAM Flowers", Model.Id);
+}
+
+<div class="container py-4" style="max-width:900px">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="@Url.Action("MyOrders", "Order")" class="text-decoration-none text-muted small"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách đơn</a>
+        @if (Model.Status == "Chờ xác nhận")
+        {
+            <form action="@Url.Action("CancelOrder", "Order")" method="post" onsubmit="return confirm('Xác nhận hủy đơn hàng #@Model.Id?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"><i class="bi bi-x-circle me-1"></i>Hủy đơn hàng</button>
+            </form>
+        }
+    </div>
+
+    <div class="bg-white p-4 p-md-5 rounded-4 border shadow-sm">
+        <div class="d-flex flex-wrap justify-content-between align-items-start border-bottom pb-3 mb-4">
+            <div>
+                <h2 class="h4 fw-bold mb-1">Hóa Đơn Đặt Hoa #@Model.Id</h2>
+                <div class="text-muted small">Ngày đặt: @Model.CreatedAt.ToString("HH:mm dd/MM/yyyy")</div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-danger px-3 py-2 rounded-pill fs-6">@Model.Status</span>
+                <div class="small mt-1 text-muted">
+                    Thanh toán: <strong>@Model.PaymentMethod</strong> (@(Model.IsPaid ? "Đã thanh toán" : "Chưa thanh toán"))
+                </div>
+                @if (!string.IsNullOrEmpty(Model.VnPayTransactionNo))
+                {
+                    <div class="small text-success">Mã GD VNPay: <strong>@Model.VnPayTransactionNo</strong></div>
+                }
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <h6 class="fw-bold text-uppercase small text-muted">Thông tin người nhận hoa</h6>
+                <div class="fw-bold">@Model.RecipientName</div>
+                <div class="small">SĐT: @Model.RecipientPhone</div>
+                <div class="small">Địa chỉ: @Model.DeliveryAddress</div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold text-uppercase small text-muted">Thông tin vận chuyển & Ghi chú</h6>
+                <div class="small">Đơn vị giao: <strong>@Model.ShippingCarrier</strong></div>
+                <div class="small">Thời gian giao dự kiến: @Model.DeliveryDate.ToString("HH:mm dd/MM/yyyy")</div>
+                @if (!string.IsNullOrEmpty(Model.Note))
+                {
+                    <div class="small mt-1 p-2 rounded-3 bg-light">Lời nhắn/Thiệp: <em>"@Model.Note"</em></div>
+                }
+            </div>
+        </div>
+
+        <div class="table-responsive mb-3">
+            <table class="table align-middle">
+                <thead class="table-light small">
+                    <tr>
+                        <th>Sản phẩm hoa</th>
+                        <th>Đơn giá</th>
+                        <th>SL</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="@(item.Product != null && !string.IsNullOrEmpty(item.Product.MainImageUrl) ? item.Product.MainImageUrl : "/images/samflora/b10-main.jpg")"
+                                         class="rounded-3 border" style="width:48px;height:48px;object-fit:cover" alt="" />
+                                    <div>
+                                        <a href="@Url.Action("Details", "Product", new { id = item.ProductId })"
+                                           class="fw-semibold text-dark text-decoration-none">@(item.Product != null ? item.Product.Name : "Sản phẩm")</a>
+                                        @if (Model.Status == "Hoàn thành")
+                                        {
+                                            <div>
+                                                <a href="@Url.Action("Details", "Product", new { id = item.ProductId })"
+                                                   class="badge bg-warning-subtle text-dark text-decoration-none mt-1">
+                                                    <i class="bi bi-star-fill text-warning"></i> Đánh giá sản phẩm
+                                                </a>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@AppHelpers.FormatVnd(item.UnitPrice)</td>
+                            <td>@item.Quantity</td>
+                            <td class="text-end fw-bold">@AppHelpers.FormatVnd(item.UnitPrice * item.Quantity)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ms-auto" style="max-width:320px">
+            <div class="d-flex justify-content-between small mb-1">
+                <span>Phí vận chuyển:</span>
+                <span>@AppHelpers.FormatVnd(Model.ShippingFee)</span>
+            </div>
+            @if (Model.DiscountAmount > 0)
+            {
+                <div class="d-flex justify-content-between small mb-1 text-success">
+                    <span>Giảm giá (@Model.CouponCode):</span>
+                    <span>-@AppHelpers.FormatVnd(Model.DiscountAmount)</span>
+                </div>
+            }
+            <div class="d-flex justify-content-between border-top pt-2 mt-2">
+                <span class="fw-bold">Tổng thanh toán:</span>
+                <span class="h5 fw-bold text-danger mb-0">@AppHelpers.FormatVnd(Model.Total)</span>
+            </div>
+        </div>
+    </div>
+</div>

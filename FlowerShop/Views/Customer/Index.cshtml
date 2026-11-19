@@ -1,0 +1,188 @@
+﻿@model PagedList.IPagedList<FlowerShop.Models.User>
+@using FlowerShop.Services
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewBag.Title = "Quản lý Tài khoản Khách hàng - CHAM Flowers Executive CMS";
+    string curFilter = ViewBag.Filter as string;
+    int totalCount = ViewBag.TotalCustomers ?? Model.TotalItemCount;
+    int vipCount = ViewBag.VipCustomers ?? 0;
+    int lockedCount = ViewBag.LockedCustomers ?? 0;
+    int regCount = Math.Max(0, totalCount - vipCount);
+}
+
+<!-- Thanh Thống kê & Chuyển hướng nhanh -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <a href="@Url.Action("Index", "Customer")" class="text-decoration-none">
+            <div class="p-3 bg-white rounded-4 shadow-sm border d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width:44px;height:44px">
+                    <i class="bi bi-people-fill fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold">Tổng khách hàng</div>
+                    <div class="h5 fw-bold text-dark mb-0">@totalCount</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="@Url.Action("Index", "Customer", new { filter = "vip" })" class="text-decoration-none">
+            <div class="p-3 bg-white rounded-4 shadow-sm border d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center" style="width:44px;height:44px">
+                    <i class="bi bi-gem fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold">Khách hàng VIP</div>
+                    <div class="h5 fw-bold text-warning-emphasis mb-0">@vipCount</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="@Url.Action("Index", "Customer", new { filter = "regular" })" class="text-decoration-none">
+            <div class="p-3 bg-white rounded-4 shadow-sm border d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width:44px;height:44px">
+                    <i class="bi bi-person-check-fill fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold">Khách thường</div>
+                    <div class="h5 fw-bold text-dark mb-0">@regCount</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a href="@Url.Action("Index", "Customer", new { filter = "locked" })" class="text-decoration-none">
+            <div class="p-3 bg-white rounded-4 shadow-sm border d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width:44px;height:44px">
+                    <i class="bi bi-person-slash fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold">Tài khoản bị khóa</div>
+                    <div class="h5 fw-bold text-danger mb-0">@lockedCount</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="admin-card p-3 px-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="@Url.Action("Index", "Customer")" class="admin-filter-pill @(string.IsNullOrEmpty(curFilter) ? "active" : "")">Tất cả khách hàng</a>
+        <a href="@Url.Action("Index", "Customer", new { filter = "vip" })" class="admin-filter-pill @(curFilter == "vip" ? "active" : "")"><i class="bi bi-gem text-warning me-1"></i>Hội viên VIP</a>
+        <a href="@Url.Action("Index", "Customer", new { filter = "regular" })" class="admin-filter-pill @(curFilter == "regular" ? "active" : "")">Khách thường</a>
+        <a href="@Url.Action("Index", "Customer", new { filter = "locked" })" class="admin-filter-pill @(curFilter == "locked" ? "active" : "")">Tài khoản khóa</a>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <form action="@Url.Action("Index", "Customer")" method="get" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="filter" value="@curFilter" />
+            <div class="admin-quick-search" style="width:235px">
+                <i class="bi bi-search text-muted me-2" style="font-size:0.82rem"></i>
+                <input type="text" name="search" value="@ViewBag.Search" placeholder="Tìm tên, email, SĐT..." />
+            </div>
+            <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3" style="height:38px">Tìm</button>
+        </form>
+        @if (AppHelpers.CanCreate("CUSTOMER"))
+        {
+            <a href="@Url.Action("Create", "Customer")" class="btn btn-sm btn-admin-primary text-nowrap">
+                <i class="bi bi-person-plus-fill me-1"></i>Thêm khách hàng
+            </a>
+        }
+    </div>
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0 text-nowrap">
+            <thead>
+                <tr>
+                    <th class="ps-4">Mã KH</th>
+                    <th>Hội viên & Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Địa chỉ giao nhận</th>
+                    <th>Hạng thành viên</th>
+                    <th>Tổng chi tiêu</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    string uInit = AppHelpers.GetInitials(u.FullName);
+                    <tr>
+                        <td class="ps-4 text-muted fw-bold small">#@u.Id</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="customer-avatar-circle" style="width:36px;height:36px;font-size:0.78rem">@uInit</span>
+                                <div>
+                                    <div class="fw-bold small text-dark">@u.FullName</div>
+                                    <div class="text-muted" style="font-size:0.75rem">@u.Email</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small fw-semibold text-dark"><i class="bi bi-telephone text-muted me-1"></i>@u.Phone</td>
+                        <td class="small text-muted" style="max-width:260px" title="@u.Address">
+                            <span class="text-truncate d-inline-block" style="max-width:250px">@u.Address</span>
+                        </td>
+                        <td>
+                            @if (u.IsVip)
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 rounded-pill small">
+                                    <i class="bi bi-gem me-1"></i>Hội viên VIP
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill small">
+                                    Thành viên chuẩn
+                                </span>
+                            }
+                        </td>
+                        <td class="fw-bold text-danger small">@AppHelpers.FormatVnd(u.TotalSpent)</td>
+                        <td>
+                            <span class="badge @(u.IsActive ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger border border-danger-subtle") rounded-pill px-2 py-1 small">
+                                @(u.IsActive ? "● Hoạt động" : "● Đã khóa")
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <a href="@Url.Action("Details", "Customer", new { id = u.Id })" class="btn btn-sm btn-light border rounded-pill px-3" title="Xem lịch sử đơn & đánh giá">
+                                    <i class="bi bi-eye me-1"></i>Chi tiết
+                                </a>
+                                @if (AppHelpers.CanEdit("CUSTOMER"))
+                                {
+                                    <a href="@Url.Action("Edit", "Customer", new { id = u.Id })" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        <i class="bi bi-pencil-square me-1"></i>Sửa
+                                    </a>
+                                    <form action="@Url.Action("ToggleLock", "Customer", new { id = u.Id })" method="post"
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn @(u.IsActive ? "khóa" : "mở khóa") tài khoản @u.FullName?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm rounded-pill px-2 @(u.IsActive ? "btn-outline-danger" : "btn-outline-success")" title="@(u.IsActive ? "Khóa tài khoản" : "Mở khóa")">
+                                            <i class="bi @(u.IsActive ? "bi-lock" : "bi-unlock")"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.PageCount > 1)
+{
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            @for (int i = 1; i <= Model.PageCount; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", "Customer", new { page = i, filter = curFilter, search = ViewBag.Search })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

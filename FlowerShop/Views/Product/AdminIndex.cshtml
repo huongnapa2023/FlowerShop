@@ -1,0 +1,147 @@
+﻿@model PagedList.IPagedList<FlowerShop.Models.Product>
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Quản lý Sản phẩm & Tồn kho";
+    var categories = ViewBag.Categories as List<FlowerShop.Models.Category> ?? new List<FlowerShop.Models.Category>();
+    int? selCat = ViewBag.CategoryId;
+    bool canCreateProduct = AppHelpers.CanCreate("PRODUCT");
+    bool canEditProduct = AppHelpers.CanEdit("PRODUCT");
+    bool canDeleteProduct = AppHelpers.CanDelete("PRODUCT");
+}
+
+<div class="admin-card p-3 px-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <form action="@Url.Action("AdminIndex", "Product")" method="get" class="d-flex flex-wrap align-items-center gap-2">
+        <div class="admin-quick-search" style="width:255px">
+            <i class="bi bi-search text-muted me-2" style="font-size:0.82rem"></i>
+            <input type="text" name="search" value="@ViewBag.Search" placeholder="Tìm tên mẫu hoa, slug..." />
+        </div>
+        <select name="categoryId" class="form-select form-select-sm rounded-pill px-3" style="width:200px;height:38px">
+            <option value="">-- Tất cả danh mục --</option>
+            @foreach (var c in categories)
+            {
+                <option value="@c.Id" @Html.Raw(selCat == c.Id ? "selected=\"selected\"" : "")>@c.Name</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3" style="height:38px">
+            <i class="bi bi-sliders me-1"></i>Lọc kho
+        </button>
+    </form>
+
+    @if (canCreateProduct)
+    {
+        <a href="@Url.Action("Create", "Product")" class="btn btn-sm btn-admin-primary d-inline-flex align-items-center gap-1">
+            <i class="bi bi-plus-lg"></i> Thêm sản phẩm mới
+        </a>
+    }
+    else
+    {
+        <button type="button" class="btn btn-sm btn-light border text-muted rounded-pill px-3" disabled title="Tài khoản cơ sở của bạn không có quyền Thêm sản phẩm mới">
+            <i class="bi bi-lock-fill text-danger me-1"></i> Cấm thêm mới
+        </button>
+    }
+</div>
+
+<div class="admin-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Mã</th>
+                    <th>Mẫu hoa thiết kế</th>
+                    <th>Danh mục</th>
+                    <th>Giá bán niêm yết</th>
+                    <th>Tồn kho</th>
+                    <th>Nhãn tiếp thị</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td class="ps-4 fw-bold text-muted small">#@p.Id</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="@p.MainImageUrl" class="rounded-3 border shadow-sm" style="width:52px;height:52px;object-fit:cover" alt="" />
+                                <div>
+                                    <div class="fw-bold small text-dark">@p.Name</div>
+                                    <div class="text-muted" style="font-size:0.73rem">/@p.Slug</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-secondary border">@(p.Category != null ? p.Category.Name : "")</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-danger small">@AppHelpers.FormatVnd(p.Price)</div>
+                            @if (p.OriginalPrice.HasValue)
+                            {
+                                <div class="text-muted text-decoration-line-through" style="font-size:0.74rem">@AppHelpers.FormatVnd(p.OriginalPrice.Value)</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @(p.StockQuantity <= 5 ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success")">
+                                @p.StockQuantity bó
+                            </span>
+                        </td>
+                        <td>
+                            @if (p.IsFeatured)
+                            {
+                                <span class="badge bg-primary-subtle text-primary me-1">Nổi bật</span>
+                            }
+                            @if (p.IsHotDeal)
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis"><i class="bi bi-fire me-1"></i>Hot Deal</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @(p.IsActive ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                @(p.IsActive ? "● Đang bán" : "○ Đang ẩn")
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <a href="@Url.Action("Details", "Product", new { id = p.Id })" target="_blank" class="btn btn-sm btn-light border rounded-pill px-2" title="Xem trên cửa hàng"><i class="bi bi-box-arrow-up-right"></i></a>
+                                @if (canEditProduct)
+                                {
+                                    <a href="@Url.Action("Edit", "Product", new { id = p.Id })" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-pencil-square me-1"></i>Sửa</a>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-light border text-muted rounded-pill px-2" disabled title="Tài khoản cơ sở không có quyền Sửa"><i class="bi bi-lock-fill"></i> Cấm sửa</button>
+                                }
+
+                                @if (canDeleteProduct)
+                                {
+                                    <form action="@Url.Action("Delete", "Product", new { id = p.Id })" method="post" onsubmit="return confirm('Xác nhận xóa sản phẩm @p.Name?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Xóa"><i class="bi bi-trash"></i> Xóa</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-light border text-muted rounded-pill px-2" disabled title="Tài khoản cơ sở bị giới hạn: Không có quyền Xóa sản phẩm"><i class="bi bi-lock-fill text-danger"></i> Cấm xóa</button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.PageCount > 1)
+{
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            @for (int i = 1; i <= Model.PageCount; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("AdminIndex", "Product", new { page = i, search = ViewBag.Search, categoryId = ViewBag.CategoryId })">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

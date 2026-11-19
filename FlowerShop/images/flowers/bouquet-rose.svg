@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff1f2"/>
+      <stop offset="100%" stop-color="#ffe4e6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="40%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="640" rx="28" fill="url(#bg)"/>
+  <circle cx="300" cy="250" r="220" fill="url(#glow)"/>
+  <!-- Botanical Eucalyptus Leaves -->
+  <g fill="#15803d" opacity="0.82">
+    <ellipse cx="185" cy="220" rx="48" ry="20" transform="rotate(-35 185 220)"/>
+    <ellipse cx="415" cy="220" rx="48" ry="20" transform="rotate(35 415 220)"/>
+    <ellipse cx="220" cy="145" rx="42" ry="18" transform="rotate(-55 220 145)"/>
+    <ellipse cx="380" cy="145" rx="42" ry="18" transform="rotate(55 380 145)"/>
+    <ellipse cx="160" cy="290" rx="40" ry="16" transform="rotate(-18 160 290)"/>
+    <ellipse cx="440" cy="290" rx="40" ry="16" transform="rotate(18 440 290)"/>
+  </g>
+  <!-- Kraft / Silk Bouquet Wrap -->
+  <polygon points="165,285 435,285 350,515 250,515" fill="#f5ebe0" stroke="#e5e7eb" stroke-width="3"/>
+  <polygon points="245,510 355,510 330,575 270,575" fill="#f5ebe0" opacity="0.92"/>
+  <!-- Layered Blooms -->
+  <g>
+    <circle cx="235" cy="225" r="54" fill="#fb7185"/>
+    <circle cx="235" cy="225" r="34" fill="#e11d48"/>
+    <circle cx="365" cy="225" r="54" fill="#fb7185"/>
+    <circle cx="365" cy="225" r="34" fill="#e11d48"/>
+    <circle cx="300" cy="170" r="58" fill="#e11d48"/>
+    <circle cx="300" cy="170" r="35" fill="#fb7185"/>
+    <circle cx="205" cy="285" r="46" fill="#e11d48"/>
+    <circle cx="205" cy="285" r="26" fill="#fb7185"/>
+    <circle cx="395" cy="285" r="46" fill="#e11d48"/>
+    <circle cx="395" cy="285" r="26" fill="#fb7185"/>
+    <circle cx="265" cy="280" r="52" fill="#fb7185"/>
+    <circle cx="265" cy="280" r="30" fill="#e11d48"/>
+    <circle cx="335" cy="280" r="52" fill="#fb7185"/>
+    <circle cx="335" cy="280" r="30" fill="#e11d48"/>
+    <circle cx="300" cy="238" r="62" fill="#e11d48"/>
+    <circle cx="300" cy="238" r="40" fill="#fb7185"/>
+    <circle cx="300" cy="238" r="18" fill="#fef3c7"/>
+  </g>
+  <!-- Baby's Breath Accents -->
+  <g fill="#ffffff" opacity="0.95">
+    <circle cx="190" cy="185" r="7"/><circle cx="205" cy="172" r="5"/>
+    <circle cx="410" cy="185" r="7"/><circle cx="395" cy="172" r="5"/>
+    <circle cx="255" cy="132" r="6"/><circle cx="345" cy="132" r="6"/>
+    <circle cx="300" cy="322" r="6"/><circle cx="245" cy="330" r="5"/><circle cx="355" cy="330" r="5"/>
+  </g>
+  <!-- Satin Ribbon -->
+  <rect x="246" y="442" width="108" height="22" rx="11" fill="#9f1239"/>
+  <path d="M300 453 L265 505 L286 512 Z" fill="#9f1239"/>
+  <path d="M300 453 L335 505 L314 512 Z" fill="#9f1239"/>
+  <circle cx="300" cy="453" r="14" fill="#9f1239"/>
+  <!-- Boutique Tag -->
+  <text x="300" y="606" text-anchor="middle" font-family="Georgia, serif" font-size="20" font-weight="bold" fill="#374151">Ecuador Red Roses</text>
+  <text x="300" y="627" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" letter-spacing="2" fill="#6b7280">CHAM FLOWERS SIGNATURE</text>
+</svg>
